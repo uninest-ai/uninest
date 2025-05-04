@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniNest - Student Housing</title>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+    <link rel="stylesheet" href="../src/style.css">
+    
+    <script>
+
+        window.componentLoaded = {};
+        
+        function logComponentLoad(name) {
+            window.componentLoaded[name] = true;
+            console.log(`组件已加载: ${name}`);
+        }
+        
+        window.addEventListener('load', function() {
+            console.log('页面完全加载，组件状态: ', window.componentLoaded);
+            
+            
+            const requiredComponents = [
+                'HomePage', 'LoginPage', 'RegisterPage', 
+                'RecommendationPage', 'PropertyProfile', 'RoommateMatchPage'
+            ];
+            
+            const missingComponents = requiredComponents.filter(
+                comp => !window.componentLoaded[comp]
+            );
+            
+            if (missingComponents.length > 0) {
+                console.warn('警告: 以下组件未确认加载: ' + missingComponents.join(', '));
+            }
+        });
+    </script>
+</head>
+<body>
+    <div id="root">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
+            <h2> UniNest </h2>
+            <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        </div>
+    </div>
+
+    <script type="text/babel" src="Homepage.js" onload="logComponentLoad('HomePage')"></script>
+    <script type="text/babel" src="login.js" onload="logComponentLoad('LoginPage')"></script>
+    <script type="text/babel" src="register.js" onload="logComponentLoad('RegisterPage')"></script>
+    <script type="text/babel" src="recommendation.js" onload="logComponentLoad('RecommendationPage')"></script>
+    <script type="text/babel" src="profile.js" onload="logComponentLoad('PropertyProfile')"></script>
+    
+    <script type="text/babel" src="roommate-match.js" onload="logComponentLoad('RoommateMatchPage')"></script>
+ 
+    <script type="text/babel" src="app.js"></script>
+    
+    <script>
+        window.addEventListener('error', function(e) {
+            console.error('全局错误捕获:', e.message, 'at', e.filename, 'line', e.lineno);
+          
+            if (e.filename && e.filename.includes('roommate-match.js')) {
+                console.error('聊天组件加载失败。尝试使用内联版本...');
+                
+            
+            }
+        });
+    </script>
+</body>
+</html>
