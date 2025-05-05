@@ -1,6 +1,6 @@
-# HorizonHome Backend
+# uninest Backend
 
-Backend service for HorizonHome - A Personalized Housing Recommendation System near CMU.
+Backend service for uninest - A Personalized Housing Recommendation System near CMU.
 
 ## Features
 
@@ -84,7 +84,7 @@ The API is organized into the following groups:
 Create a `.env` file with the following variables:
 
 ```
-DATABASE_URL=postgresql://user:password@localhost/horizonhome
+DATABASE_URL=postgresql://user:password@localhost/uninest
 SECRET_KEY=your-secret-key-for-jwt
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 AWS_ACCESS_KEY_ID=your-aws-access-key

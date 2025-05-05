@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     
     EC2_PUBLIC_IP: str = os.getenv("EC2_PUBLIC_IP", "3.15.186.50")
     
+    vite_api_base_url: Optional[str] = None
     class Config:
         env_file = ".env"
 

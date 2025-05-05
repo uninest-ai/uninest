@@ -1,6 +1,6 @@
-# HorizonHome Tests
+# uninest Tests
 
-This directory contains test files for the HorizonHome application backend using pytest.
+This directory contains test files for the uninest application backend using pytest.
 
 ## Tests Structure
 

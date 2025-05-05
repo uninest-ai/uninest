@@ -1,24 +1,11 @@
-FROM python:3.9-slim
+FROM nginx:alpine
 
-WORKDIR /app
+# 复制已构建的文件
+COPY frontend/housing-web/dist /usr/share/nginx/html
 
-# 安装系统依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+# 复制nginx配置
+COPY docker/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# 复制依赖文件
-COPY backend/requirements.txt .
+EXPOSE 80
 
-# 安装依赖
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 复制应用代码
-COPY backend/ .
-
-# 暴露API端口
-EXPOSE 8000
-
-# 启动命令
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["nginx", "-g", "daemon off;"]

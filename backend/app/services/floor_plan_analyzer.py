@@ -5,17 +5,23 @@ import re
 from typing import Dict, Any, List
 from openai import OpenAI
 from app.config import settings
+from scipy import ndimage
+import cv2
+import numpy as np
+import torch
+from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmentation
 
 class FloorPlanAnalysisService:
-    """Service for analyzing floor plan images using AI"""
+    """Service for analyzing floor plan images using specialized computer vision models"""
     
     def __init__(self):
-        self.api_key = settings.OPENAI_API_KEY
-        self.client = OpenAI(api_key=self.api_key)
-    
+        # Load specialized floor plan segmentation model
+        self.feature_extractor = SegformerFeatureExtractor.from_pretrained("nvidia/segformer-b0-finetuned-floorplans")
+        self.model = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b0-finetuned-floorplans")
+        
     def analyze_floor_plan(self, image_bytes: bytes) -> Dict[str, Any]:
         """
-        Analyze a floor plan image to extract key architectural information
+        Analyze a floor plan image using specialized computer vision
         
         Args:
             image_bytes: Floor plan image data in bytes
@@ -23,69 +29,45 @@ class FloorPlanAnalysisService:
         Returns:
             Dictionary containing extracted architectural features
         """
-        # Encode image to base64
-        base64_image = base64.b64encode(image_bytes).decode('utf-8')
-        
-        # Detailed prompt for floor plan analysis
-        prompt = """
-        Analyze this floor plan image with architectural expertise. 
-        Extract the following information:
-        
-        1. Total square footage estimate
-        2. Number and types of rooms
-        3. Layout efficiency score (1-10 scale)
-        4. Architectural style elements
-        5. Spatial relationships between rooms
-        6. Traffic flow patterns
-        7. Natural light optimization
-        8. Potential construction challenges
-        
-        Return a detailed JSON with these categories.
-        """
-        
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{base64_image}"
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens=500
-            )
+            # Convert bytes to numpy array
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             
-            # Extract content
-            content = response.choices[0].message.content
+            # Preprocess image
+            inputs = self.feature_extractor(images=img, return_tensors="pt")
             
-            # Extract JSON 
-            json_match = re.search(r'\{.*\}', content, re.DOTALL | re.MULTILINE)
-            if json_match:
-                try:
-                    analysis_results = json.loads(json_match.group(0))
-                    return {
-                        "status": "success",
-                        "analysis": analysis_results
-                    }
-                except json.JSONDecodeError:
-                    return {
-                        "status": "error",
-                        "message": "Could not parse JSON from response"
-                    }
+            # Get segmentation predictions
+            outputs = self.model(**inputs)
+            logits = outputs.logits
+            
+            # Process segmentation results
+            predicted_mask = logits.argmax(dim=1).squeeze().cpu().numpy()
+            
+            # Extract room information (room count, types, sizes)
+            labeled_mask, num_rooms = ndimage.label(predicted_mask == 1)  # Assuming 1 is the label for rooms
+            room_sizes = ndimage.sum(np.ones_like(labeled_mask), labeled_mask, range(1, num_rooms + 1))
+            
+            # Calculate approximate square footage
+            # Assuming we know the scale of the floor plan (e.g., pixels per foot)
+            pixels_per_foot = 10  # This would need calibration
+            total_sq_footage = sum(room_sizes) / (pixels_per_foot ** 2)
+            
+            # Analyze room adjacency and traffic flow
+            # This would involve analyzing the relationships between segmented rooms
             
             return {
-                "status": "error",
-                "message": "No JSON found in response"
+                "status": "success",
+                "analysis": {
+                    "total_square_footage": round(total_sq_footage, 2),
+                    "room_count": num_rooms,
+                    "room_sizes": room_sizes.tolist(),
+                    "layout_efficiency_score": self._calculate_efficiency_score(labeled_mask, room_sizes),
+                    "traffic_flow": self._analyze_traffic_flow(labeled_mask),
+                    "natural_light_potential": self._analyze_natural_light(labeled_mask)
+                }
             }
-        
+            
         except Exception as e:
             return {
                 "status": "error",

@@ -2,13 +2,13 @@ version: '3.8'
 
 services:
   backend:
+    ports:
+      - "8000:8000"
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
-    restart: always
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/horizonhome
-      - SECRET_KEY=your-secret-key-please-change-in-production
+      - DATABASE_URL=postgresql://postgres:password@db:5432/uninest
     depends_on:
       - db
 
@@ -16,7 +16,6 @@ services:
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
-    restart: always
     ports:
       - "80:80"
     depends_on:
@@ -29,8 +28,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=horizonhome
-    restart: always
+      - POSTGRES_DB=uninest
 
 volumes:
   postgres_data:

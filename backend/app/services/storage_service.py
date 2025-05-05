@@ -9,7 +9,7 @@ class S3ImageService:
         # get key from .env
         self.aws_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
         self.aws_secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
-        self.bucket_name = os.environ.get("S3_BUCKET_NAME", "horizonhome-property-images")
+        self.bucket_name = os.environ.get("S3_BUCKET_NAME", "uninest-property-images")
         self.region = os.environ.get("AWS_REGION", "us-east-2") # need to be same region
         
         # Init storage client

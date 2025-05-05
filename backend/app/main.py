@@ -13,8 +13,8 @@ from app.routes import floor_plans, ml_pipeline, architectural_style
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="HorizonHome API",
-    description="API for HorizonHome - Personalized Housing Recommendation System with Architectural Analysis",
+    title="uninest API",
+    description="API for uninest - Personalized Housing Recommendation System with Architectural Analysis",
     version="0.2.0"
 )
 
@@ -32,7 +32,7 @@ origins = [
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"], # allow all for now
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -114,7 +114,7 @@ def root():
     Root endpoint - can be used for health checks
     """
     return {
-        "message": "Welcome to HorizonHome API",
+        "message": "Welcome to uninest API",
         "version": "0.2.0",
         "new_features": [
             "Floor plan analysis",
