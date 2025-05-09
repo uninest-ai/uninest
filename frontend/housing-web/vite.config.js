@@ -14,7 +14,7 @@ export default defineConfig({
       ],
     },
   },
-  define: {
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'http://3.15.186.50:8000/api/v1')
-  }
+  // define: {  // <-- 注释掉或删除这个 define 部分，或者至少移除 VITE_API_BASE_URL 的定义
+  //   'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || '')
+  // }
 })

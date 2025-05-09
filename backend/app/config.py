@@ -28,7 +28,8 @@ class Settings(BaseSettings):
     # Open AI API Key
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     
-    EC2_PUBLIC_IP: str = os.getenv("EC2_PUBLIC_IP", "3.15.186.50")
+    # EC2_PUBLIC_IP: str = os.getenv("EC2_PUBLIC_IP", "3.15.186.50")
+    EC2_PUBLIC_IP: str = os.getenv("EC2_PUBLIC_IP", "18.219.81.184")
     
     vite_api_base_url: Optional[str] = None
     class Config:

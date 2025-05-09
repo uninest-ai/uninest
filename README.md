@@ -58,3 +58,14 @@ docker-compose up
 docker-compose down
 docker-compose logs
 ```
+
+### Test user id:
+```
+{
+  "email": "user0@example.com",
+  "username": "user0",
+  "user_type": "tenant",
+  "password": "User0000",
+  "confirm_password": "User0000"
+}
+```

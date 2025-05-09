@@ -1,8 +1,9 @@
+// frontend/housing-web/src/api.js
 import axios from "axios";
-import { API_BASE_URL } from "./config";
+import { API_BASE_URL } from "./config"; // API_BASE_URL is now "/api/v1"
 
 const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: API_BASE_URL, // This will be "/api/v1"
     headers: {
         "Content-Type": "application/json",
     },
