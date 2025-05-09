@@ -18,12 +18,6 @@ app = FastAPI(
     version="0.2.0"
 )
 
-app.include_router(
-    users.router,
-    prefix=f"{settings.API_V1_STR}/users",
-    tags=["Users"]
-)
-
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -123,3 +117,7 @@ def root():
             "Construction materials analysis"
         ]
     }
+    
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) # Port 8000 is an example
