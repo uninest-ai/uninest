@@ -1,49 +1,52 @@
 # Core Web Framework
 fastapi==0.109.0
-uvicorn[standard]==0.27.0.post1
-gunicorn==21.2.0
+uvicorn==0.27.0.post1
+
 # Database
 sqlalchemy==2.0.25
 alembic==1.13.1
 psycopg2-binary==2.9.9
 
 # Authentication & Security
-python-jose[cryptography]==3.3.0 # cryptography 会被自动安装
-passlib[bcrypt]==1.7.4         # bcrypt 会被自动安装
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
 python-multipart==0.0.9
 PyJWT==2.8.0
 
 # Environment & Configuration
 python-dotenv==1.0.0
 pydantic==2.6.1
-pydantic-settings==2.1.0 # 确保这个版本与 pydantic 2.6.1 兼容
-email-validator==2.1.1   # 确保这个版本与 pydantic 2.6.1 兼容
+pydantic-settings==2.1.0
+email-validator==2.1.1
 
 # AWS Integration
 boto3==1.34.28
 
-# Data Processing / Machine Learning (CPU)
+# Data Processing & ML
 numpy==1.26.4
 pandas==2.0.3
 scikit-learn==1.3.2
+torch>=2.0.0
+torchvision>=0.15.0
+transformers==4.30.0
+accelerate>=0.20.0
 
 # Image Processing
 Pillow==10.2.0
-opencv-python-headless==4.5.4.60 # headless 版本很好，不包含 GUI 依赖
+opencv-python-headless==4.5.4.60
 
-# API & Documentation / HTTP Client
+# API & Documentation
 httpx==0.27.0
-
-# Logging
 structlog==23.1.0
 
 # OpenAI Integration
 openai==1.12.0
 
-torch==2.3.0+cpu
-torchvision==0.18.0+cpu # 确保这个版本与 torch 2.3.0+cpu 兼容且在CPU wheel源中存在
-# torchaudio 如果需要，也用 +cpu 版本
+# Web Server
+gunicorn==21.2.0
 
-# Transformers and Accelerate
-transformers==4.30.0
-# accelerate>=0.20.0 # 再次考虑是否需要
+# CORS Handling
+Flask-Cors==4.0.0
+
+# Additional Utilities
+asyncio==3.4.3
