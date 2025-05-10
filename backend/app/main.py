@@ -6,14 +6,18 @@ from app.routes import auth, users, properties, profile, messages
 from app.database import engine, Base
 
 from app.routes import image_analysis, chat_ai, recommendations
+from app.routes import floor_plans, ml_pipeline, architectural_style
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="HorizonHome API",
-    description="API for HorizonHome - Personalized Housing Recommendation System",
-    version="0.1.0"
+    title="uninest API",
+    description="API for uninest - Personalized Housing Recommendation System with Architectural Analysis",
+    version="0.2.0",
+    docs_url=f"{settings.API_V1_STR}/docs",  # 例如，如果 settings.API_V1_STR 是 "/api/v1"，这里就是 "/api/v1/docs"
+    redoc_url=f"{settings.API_V1_STR}/redoc", # 例如 "/api/v1/redoc"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" # 例如 "/api/v1/openapi.json"
 )
 
 app.include_router(
@@ -82,11 +86,30 @@ app.include_router(
     tags=["Recommendations"]
 )
 
-# app.include_router(
-#     map.router,
-#     prefix=f"{settings.API_V1_STR}/map",
-#     tags=["Map"]
-# )
+# NEW ARCHITECTURAL ROUTES
+app.include_router(
+    floor_plans.router,
+    prefix=f"{settings.API_V1_STR}/floor-plans",
+    tags=["Floor Plan Analysis"]
+)
+
+app.include_router(
+    ml_pipeline.router,
+    prefix=f"{settings.API_V1_STR}/ml-pipeline",
+    tags=["ML Data Pipeline"]
+)
+
+app.include_router(
+    architectural_style.router,
+    prefix=f"{settings.API_V1_STR}/architectural-styles",
+    tags=["Architectural Style Analysis"]
+)
+
+app.include_router(
+    messages.router,
+    prefix=f"{settings.API_V1_STR}/messages",
+    tags=["Messages"]
+)
 
 @app.get("/")
 def root():
@@ -94,9 +117,3 @@ def root():
     Root endpoint - can be used for health checks
     """
     return {"message": "Welcome to HorizonHome API"}
-
-app.include_router(
-    messages.router,
-    prefix=f"{settings.API_V1_STR}/messages",
-    tags=["Messages"]
-)
