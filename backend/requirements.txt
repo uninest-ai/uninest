@@ -1,8 +1,7 @@
 # Core Web Framework
 fastapi==0.109.0
-uvicorn[standard]==0.27.0.post1 # [standard] 包含性能相关的依赖，如 httptools, websockets
+uvicorn[standard]==0.27.0.post1
 gunicorn==21.2.0
-
 # Database
 sqlalchemy==2.0.25
 alembic==1.13.1
@@ -41,23 +40,10 @@ structlog==23.1.0
 # OpenAI Integration
 openai==1.12.0
 
-# Deep Learning (CPU-ONLY VERSIONS)
-# 访问 https://pytorch.org/get-started/locally/ 获取适合您 Python 3.9 的 CPU 版本命令
-# 以下是示例，请务必去官网确认最新、最准确的 CPU 版本安装方式
-# 通常会指定 --index-url https://download.pytorch.org/whl/cpu
-# 例如 (版本号可能需要调整以匹配您之前使用的 torch>=2.0.0 的某个具体CPU版本):
-torch==2.3.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.18.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+torch==2.3.0+cpu
+torchvision==0.18.0+cpu # 确保这个版本与 torch 2.3.0+cpu 兼容且在CPU wheel源中存在
 # torchaudio 如果需要，也用 +cpu 版本
 
 # Transformers and Accelerate
-# Transformers 本身可以 CPU 运行，但 accelerate 通常用于分布式/混合精度，检查是否真的需要
-# 如果只是用 transformers 进行基本的模型加载和推理，可能不需要 accelerate
 transformers==4.30.0
-# accelerate>=0.20.0 # 考虑是否可以移除，或是否有 CPU 优化的轻量级用法
-
-# FastAPI 内置了 CORS，Flask-Cors 可能不需要
-# Flask-Cors==4.0.0
-
-# asyncio 是 Python 3.7+ 的内置库，不需要在 requirements.txt 中列出
-# asyncio==3.4.3
+# accelerate>=0.20.0 # 再次考虑是否需要
