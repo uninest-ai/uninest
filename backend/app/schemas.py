@@ -107,13 +107,6 @@ class PropertyResponse(PropertyBase):
     is_active: bool
     images: List[PropertyImageResponse] = []
     
-    # Add landlord information
-    landlord_company: Optional[str] = None
-    landlord_contact: Optional[str] = None
-    landlord_description: Optional[str] = None
-    landlord_verification: Optional[bool] = None
-    landlord_name: Optional[str] = None
-    
     class Config:
         from_attributes = True
 

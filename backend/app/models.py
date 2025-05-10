@@ -5,6 +5,7 @@ from datetime import datetime
 from app.database import Base
 
 # Define association tables for many-to-many relationships
+# roommate preferences should be related to each user. what this means is the potential roomates of the user(tenant)
 roommate_preferences = Table(
     "roommate_preferences",
     Base.metadata,
@@ -21,6 +22,7 @@ property_preferences = Table(
     Column("property_id", Integer, ForeignKey("properties.id"), primary_key=True)
 )
 
+# Not using inheritance so user can be tenant and owner at the same time (IGNORE this, do this when free ltr)
 # In the User class, add the preferred_roommates relationship
 class User(Base):
     """
@@ -40,7 +42,7 @@ class User(Base):
     interactions = relationship("Interaction", back_populates="user")
     comments = relationship("Comment", back_populates="user")
     
-    # this preference use to store user preferences, include labels extractec from chat, image upload, bio etc.
+    # this preference use to store user preferences, include labels extractec from chat, image upload, bio etc. Should I put this in tenant profile or user profile?
     preferences = relationship("UserPreference", back_populates="user")
     
     tenant_profile = relationship("TenantProfile", back_populates="user", uselist=False)
@@ -160,16 +162,17 @@ class Property(Base):
     )
     
 class PropertyImage(Base):
-    """Property Image"""
+    """房产图片模型"""
     __tablename__ = "property_images"
     
     id = Column(Integer, primary_key=True, index=True)
     property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
     image_url = Column(String, nullable=False)
-    is_primary = Column(Boolean, default=False) 
-    labels = Column(JSON, nullable=True)  # image labels
+    is_primary = Column(Boolean, default=False)  # 是否为主图
+    labels = Column(JSON, nullable=True)  # 图片分析标签
     created_at = Column(DateTime, default=datetime.utcnow)
     
+    # 关系
     property = relationship("Property", back_populates="images")
 
 class Interaction(Base):

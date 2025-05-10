@@ -78,6 +78,7 @@ def get_my_landlord_profile(
             detail="Landlord profile not found"
         )
     
+    # Load the properties eagerly to avoid lazy-loading issues
     db.refresh(profile)
     
     return profile
@@ -189,11 +190,12 @@ def update_tenant_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Update tenant"""
-    # Check
+    """更新租户资料"""
+    # 检查用户是否为租户
     if current_user.user_type != "tenant":
         raise HTTPException(status_code=403, detail="Only tenants can update tenant profiles")
     
+    # 获取现有资料或创建新资料
     profile = db.query(TenantProfile).filter(TenantProfile.user_id == current_user.id).first()
     if not profile:
         profile = TenantProfile(user_id=current_user.id)
@@ -240,6 +242,7 @@ def get_user_preferences(
     preferences = query.all()
     return preferences
 
+# Add this to the profile.py router
 @router.post("/preferences", response_model=schemas.UserPreference, status_code=status.HTTP_201_CREATED)
 def add_user_preference(
     preference_data: schemas.UserPreferenceCreate,
@@ -273,6 +276,7 @@ def add_user_preference(
     
     return new_preference
 
+# Add this to the profile.py router
 @router.delete("/preferences/{preference_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user_preference(
     preference_id: int,

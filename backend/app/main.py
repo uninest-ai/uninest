@@ -5,32 +5,32 @@ from app.config import settings
 from app.routes import auth, users, properties, profile, messages
 from app.database import engine, Base
 
-# Import the new route modules
 from app.routes import image_analysis, chat_ai, recommendations
-from app.routes import floor_plans, ml_pipeline, architectural_style
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="uninest API",
-    description="API for uninest - Personalized Housing Recommendation System with Architectural Analysis",
-    version="0.2.0"
+    title="HorizonHome API",
+    description="API for HorizonHome - Personalized Housing Recommendation System",
+    version="0.1.0"
+)
+
+app.include_router(
+    users.router,
+    prefix=f"{settings.API_V1_STR}/users",
+    tags=["Users"]
 )
 
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://18.219.81.184:5173",  # EC2 instance
-    "http://18.219.81.184:3000"   # EC2 instance alternative port
 ]
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,7 +49,7 @@ app.include_router(
     tags=["Authentication"]
 )
 
-# Property and profile routes
+# New property and profile routes
 app.include_router(
     properties.router,
     prefix=f"{settings.API_V1_STR}/properties",
@@ -62,7 +62,8 @@ app.include_router(
     tags=["User Profiles"]
 )
 
-# Recommendation-related routes:
+# For recommendations:
+
 app.include_router(
     image_analysis.router,
     prefix=f"{settings.API_V1_STR}/images",
@@ -81,47 +82,21 @@ app.include_router(
     tags=["Recommendations"]
 )
 
-# NEW ARCHITECTURAL ROUTES
-app.include_router(
-    floor_plans.router,
-    prefix=f"{settings.API_V1_STR}/floor-plans",
-    tags=["Floor Plan Analysis"]
-)
-
-app.include_router(
-    ml_pipeline.router,
-    prefix=f"{settings.API_V1_STR}/ml-pipeline",
-    tags=["ML Data Pipeline"]
-)
-
-app.include_router(
-    architectural_style.router,
-    prefix=f"{settings.API_V1_STR}/architectural-styles",
-    tags=["Architectural Style Analysis"]
-)
-
-app.include_router(
-    messages.router,
-    prefix=f"{settings.API_V1_STR}/messages",
-    tags=["Messages"]
-)
+# app.include_router(
+#     map.router,
+#     prefix=f"{settings.API_V1_STR}/map",
+#     tags=["Map"]
+# )
 
 @app.get("/")
 def root():
     """
     Root endpoint - can be used for health checks
     """
-    return {
-        "message": "Welcome to uninest API",
-        "version": "0.2.0",
-        "new_features": [
-            "Floor plan analysis",
-            "Architectural style classification",
-            "ML data pipeline for architectural analysis",
-            "Construction materials analysis"
-        ]
-    }
-    
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) # Port 8000 is an example
+    return {"message": "Welcome to HorizonHome API"}
+
+app.include_router(
+    messages.router,
+    prefix=f"{settings.API_V1_STR}/messages",
+    tags=["Messages"]
+)

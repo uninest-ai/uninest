@@ -7,13 +7,13 @@ from app.database import get_db
 from app.models import User, Property, UserPreference, TenantProfile
 from app.auth import get_current_user
 from app import recommendations
-from app import schemas
+from app import schemas  # Add this import to fix the previous error
 
-router = APIRouter() 
+router = APIRouter()  # This line was missing
 
 @router.get("/properties", response_model=List[schemas.PropertyRecommendation])
 def get_property_recommendations(
-    limit: int = Query(10, ge=1, le=50), # show limit can be change from front
+    limit: int = Query(10, ge=1, le=50),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

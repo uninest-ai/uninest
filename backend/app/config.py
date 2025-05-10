@@ -3,11 +3,13 @@ from typing import Optional
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
+# 加载 .env 文件中的环境变量
 load_dotenv()
 
 class Settings(BaseSettings):
     # Database settings
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "your-database-url-in-env")
+    # DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:123456@localhost/horizonhome")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:webappccc@database-1.cnmc6q0ai3ke.us-east-2.rds.amazonaws.com:5432/my_database")
     
     # JWT settings
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-for-jwt-please-change-in-production")
@@ -28,10 +30,6 @@ class Settings(BaseSettings):
     # Open AI API Key
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     
-    # EC2_PUBLIC_IP: str = os.getenv("EC2_PUBLIC_IP", "3.15.186.50")
-    EC2_PUBLIC_IP: str = os.getenv("EC2_PUBLIC_IP", "18.219.81.184")
-    
-    vite_api_base_url: Optional[str] = None
     class Config:
         env_file = ".env"
 
