@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   backend:
+    # ports need to comment out ltr
     ports:
       - "8000:8000"
     build:
