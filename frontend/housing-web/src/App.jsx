@@ -18,34 +18,15 @@ import ChatPage from "../pages/chat";
 import EditPropertyPage from "../pages/edit-property";
 const App = () => {
   const [loading, setLoading] = useState(true);
-  const [componentLoaded, setComponentLoaded] = useState({});
-
-  // 模拟组件加载状态
-  const logComponentLoad = (name) => {
-    setComponentLoaded((prev) => ({ ...prev, [name]: true }));
-    console.log(`组件已加载: ${name}`);
-  };
-
-  // 模拟页面加载完成后检查组件状态
+ 
+  // Simulate loading after page loading
   useEffect(() => {
-    const requiredComponents = [
-      "HomePage",
-      "LoginPage",
-      "RegisterPage",
-      "RecommendationPage",
-      "ProfilePage",
-      "RoommatePage",
-    ];
-  }, [componentLoaded]);
-
-  // 模拟加载完成后的处理
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2000); // 模拟加载 2 秒
+    const timer = setTimeout(() => setLoading(false),20 ); // Simulate loading 0.02 seconds
     return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
-    // 加载动画
+    // Loading animation
     return (
       <div
         style={{
@@ -81,15 +62,15 @@ const App = () => {
 
   return (
     <Routes>
-      {/* 将根路径重定向到recommendation页面 */}
+      {/* Redirect root path to recommendation page */}
       <Route path="/" element={<Navigate to="/recommendation" replace />} />
       
-      {/* 公共路由 - 不需要身份验证 */}
+      {/* Public routes - no authentication required */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/homepage" element={<HomePage />} />
       
-      {/* 受保护的路由 - 需要身份验证 */}
+      {/* Protected routes - require authentication */}
       <Route 
         path="/recommendation" 
         element={
