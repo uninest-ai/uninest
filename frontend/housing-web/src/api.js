@@ -4,29 +4,28 @@ import axios from "axios";
 // and vite.config.js doesn't override it.
 import { API_BASE_URL } from "./config";
 
-// 创建 axios 实例
-// baseURL 将会是 "", 因为我们会在每个请求中手动添加 API_PREFIX
+// Create axios instance
 const api = axios.create({
-    baseURL: API_BASE_URL, // Should be ""
+    baseURL: API_BASE_URL, 
     headers: {
         "Content-Type": "application/json",
     },
 });
 
-// 定义统一的 API 路径前缀
+// Define a unified API path prefix
 const API_PREFIX = "/api/v1";
 
-// 辅助函数：获取 token
+// Helper function: get token
 const getToken = () => {
   const token = localStorage.getItem("authToken");
   if (!token) {
-    // 可以选择抛出错误，或者让每个函数自行处理
+    // We can throw an error, or let each function handle it
     // console.warn("Authorization token is missing.");
   }
   return token;
 };
 
-// 登录用户
+// Login user
 export const loginUser = async (email, password) => {
   const formData = new URLSearchParams();
   formData.append("grant_type", "password");
@@ -48,13 +47,13 @@ export const loginUser = async (email, password) => {
   return response.data;
 };
 
-// 注册用户
+// Register user
 export const registerUser = async (userData) => {
   const response = await api.post(`${API_PREFIX}/auth/register`, userData);
   return response.data;
 };
 
-// 获取当前用户信息
+// Get current user information
 export const getUserProfile = async () => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for getUserProfile.");
@@ -67,7 +66,7 @@ export const getUserProfile = async () => {
   return response.data;
 };
 
-// 分析图片
+// Analyze image
 export const analyzeImage = async (file, analysisType) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for analyzeImage.");
@@ -78,13 +77,13 @@ export const analyzeImage = async (file, analysisType) => {
   const response = await api.post(`${API_PREFIX}/images/analyze?analysis_type=${analysisType}`, formData, {
     headers: {
       Authorization: token,
-      "Content-Type": "multipart/form-data", // 通常由 axios 根据 FormData 自动设置，但明确指出无害
+      "Content-Type": "multipart/form-data", 
     },
   });
   return response.data;
 };
 
-// 检查租户资料是否存在且完整
+// Check if tenant profile exists and is complete
 export const checkTenantProfile = async () => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for checkTenantProfile.");
@@ -96,21 +95,21 @@ export const checkTenantProfile = async () => {
       },
     });
     const tenantProfile = response.data;
-    // 根据某个关键字段判断 profile 是否完成 (示例逻辑，请根据实际情况调整)
+    // The profile is complete if the budget is not null
     if (tenantProfile?.budget === null || typeof tenantProfile?.budget === 'undefined') {
-      return null; // 未填写完整的 profile
+      return null; // The profile is not complete
     }
     return tenantProfile;
   } catch (err) {
     if (err.response?.status === 404) {
-      return null; // 404 表示租户资料不存在
+      return null; // 404 means the tenant profile does not exist
     }
     console.error("Error checking tenant profile:", err);
     throw err;
   }
 };
 
-// 检查房东资料是否存在且完整
+// Check if landlord profile exists and is complete
 export const checkLandlordProfile = async () => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for checkLandlordProfile.");
@@ -122,31 +121,31 @@ export const checkLandlordProfile = async () => {
       },
     });
     const landlordProfile = response.data;
-    // 根据某个关键字段判断 profile 是否完成 (示例逻辑，请根据实际情况调整)
+    // The profile is complete if the contact_phone is not null
     if (landlordProfile?.contact_phone === null || typeof landlordProfile?.contact_phone === 'undefined') {
-      return null; // 未填写完整的 profile
+      return null; // The profile is not complete
     }
     return landlordProfile;
   } catch (err) {
     if (err.response?.status === 404) {
-      return null; // 404 表示房东资料不存在
+      return null; // 404 means the landlord profile does not exist
     }
     console.error("Error checking landlord profile:", err);
     throw err;
   }
 };
 
-// 根据用户ID获取用户类型 (注意：原代码中 token 未定义，已修复)
+// Get user type (注意：原代码中 token 未定义，已修复)
 export const getUserType = async (userId) => {
   const token = getToken(); // 获取 token
-  if (!token && userId) { // 如果是获取他人信息，可能不需要token，取决于后端API设计
-    // 如果获取他人信息不需要token，则移除此处的token检查和header
-    // 但通常获取用户信息需要权限
+  if (!token && userId) { // If getting other user's information, it may not need token, depending on the backend API design
+    // If getting other user's information does not need token, remove the token check and header here
+    // But usually getting user information needs permission
      throw new Error("Authorization token is missing for getUserType.");
   }
 
   const headers = {};
-  if (token) { // 仅当 token 存在时才添加到 headers
+  if (token) { // Only add to headers when token exists
     headers.Authorization = token;
   }
   
@@ -154,7 +153,7 @@ export const getUserType = async (userId) => {
   return response.data;
 };
 
-// 更新租户资料
+// Update tenant profile
 export const updateTenantProfile = async (profileData) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for updateTenantProfile.");
@@ -167,13 +166,13 @@ export const updateTenantProfile = async (profileData) => {
   return response.data;
 };
 
-// 上传房产图片
+// Upload property image
 export const uploadPropertyImage = async (file, propertyId) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for uploadPropertyImage.");
 
   const formData = new FormData();
-  formData.append("files", file); // 后端 FastAPI UploadFile 参数名通常是 'file' 或 'files'
+  formData.append("files", file); // The backend FastAPI UploadFile parameter name is usually 'file' or 'files'
 
   const response = await api.post(`${API_PREFIX}/properties/${propertyId}/images`, formData, {
     headers: {
@@ -184,7 +183,7 @@ export const uploadPropertyImage = async (file, propertyId) => {
   return response.data;
 };
 
-// 与 AI 进行聊天
+// Chat with AI
 export const sendMessageToChat = async (message) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for sendMessageToChat.");
@@ -197,7 +196,7 @@ export const sendMessageToChat = async (message) => {
   return response.data;
 };
 
-// 更新房东信息
+// Update landlord information
 export const updateLandlordProfile = async (profileData) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for updateLandlordProfile.");
@@ -215,7 +214,7 @@ export const updateLandlordProfile = async (profileData) => {
   }
 };
 
-// 创建房产
+// Create property
 export const createProperty = async (propertyData) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for createProperty.");
@@ -233,7 +232,7 @@ export const createProperty = async (propertyData) => {
   }
 };
 
-// 获取房东个人资料及其发布的房产列表
+// Get landlord personal information and their published properties list
 export const getLandlordProfile = async () => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for getLandlordProfile.");
@@ -251,10 +250,10 @@ export const getLandlordProfile = async () => {
   }
 };
 
-// 获取单个房产详情
+// Get single property details
 export const getPropertyDetails = async (propertyId) => {
   const token = getToken(); 
-  // 对于公共房源详情，token 可能不是必需的，取决于您的后端 API 设计
+  // For public property details, token may not be required, depending on your backend API design
   // if (!token) throw new Error("Authorization token is missing for getPropertyDetails.");
 
   const headers = { 'Content-Type': 'application/json' };
@@ -271,10 +270,10 @@ export const getPropertyDetails = async (propertyId) => {
   }
 };
 
-// 获取推荐房产
+// Get property recommendations
 export const getPropertyRecommendations = async (limit = 10) => {
   const token = getToken();
-  // 推荐房产是否需要 token 取决于您的业务逻辑
+  // Whether property recommendations need token depends on your business logic
   // if (!token) throw new Error("Authorization token is missing for getPropertyRecommendations.");
   
   const headers = { 'Content-Type': 'application/json' };
@@ -291,7 +290,7 @@ export const getPropertyRecommendations = async (limit = 10) => {
   }
 };
 
-// 获取会话列表
+// Get conversation list
 export const getConversations = async () => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for getConversations.");
@@ -302,7 +301,7 @@ export const getConversations = async () => {
   return response.data;
 };
 
-// 获取与用户的消息记录
+// Get messages with other user
 export const getMessages = async (otherUserId) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for getMessages.");
@@ -313,7 +312,7 @@ export const getMessages = async (otherUserId) => {
   return response.data;
 };
 
-// 发送消息
+// Send message
 export const sendMessage = async ({ content, receiver_id }) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for sendMessage.");
@@ -324,10 +323,10 @@ export const sendMessage = async ({ content, receiver_id }) => {
   return response.data;
 };
 
-// 获取室友推荐
+// Get roommate recommendations
 export const getRoommateRecommendations = async (limit = 10) => {
   const token = getToken();
-  // 室友推荐是否需要 token 取决于您的业务逻辑
+  // Whether roommate recommendations need token depends on your business logic
   // if (!token) throw new Error("Authorization token is missing for getRoommateRecommendations.");
 
   const headers = { 'Content-Type': 'application/json' };
@@ -339,10 +338,10 @@ export const getRoommateRecommendations = async (limit = 10) => {
   return response.data;
 };
 
-// 获取用户详情
+// Get user details
 export const getUserDetails = async (userId) => {
   const token = getToken();
-  // 获取他人详情是否需要 token 取决于您的业务逻辑
+  // Whether getting other user's details needs token depends on your business logic
   // if (!token) throw new Error("Authorization token is missing for getUserDetails.");
 
   const headers = { 'Content-Type': 'application/json' };
@@ -354,10 +353,10 @@ export const getUserDetails = async (userId) => {
   return response.data;
 };
 
-// 获取房源的所有图片
+// Get all property images
 export const getPropertyImages = async (propertyId) => {
   const token = getToken();
-  // 获取图片是否需要 token 取决于您的业务逻辑
+  // Whether getting property images needs token depends on your business logic
   // if (!token) throw new Error("Authorization token is missing for getPropertyImages.");
 
   const headers = { 'Content-Type': 'application/json' };
@@ -369,7 +368,7 @@ export const getPropertyImages = async (propertyId) => {
   return response.data;
 };
 
-// 删除房源图片
+// Delete property image
 export const deletePropertyImage = async (propertyId, imageId) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for deletePropertyImage.");
@@ -382,7 +381,7 @@ export const deletePropertyImage = async (propertyId, imageId) => {
   return response.data;
 };
 
-// 设置主图
+// Set primary image
 export const setPrimaryImage = async (propertyId, imageId) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for setPrimaryImage.");
@@ -395,7 +394,7 @@ export const setPrimaryImage = async (propertyId, imageId) => {
   return response.data;
 };
 
-// 删除房产
+// Delete property
 export const deleteProperty = async (propertyId) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for deleteProperty.");
@@ -413,7 +412,7 @@ export const deleteProperty = async (propertyId) => {
   }
 };
 
-// 更新房源信息
+// Update property information
 export const updateProperty = async (propertyId, propertyData) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for updateProperty.");
@@ -427,17 +426,17 @@ export const updateProperty = async (propertyId, propertyData) => {
   return response.data;
 };
 
-// 使用 fetch 的 getLandlordById 函数
+// Use fetch's getLandlordById function
 export const getLandlordById = async (landlordId) => {
   try {
     // import.meta.env.VITE_API_BASE_URL 应该是 ""
     // API_PREFIX 是 "/api/v1"
-    // 所以最终路径是 "/api/v1/landlords/${landlordId}"
+    // So the final path is "/api/v1/landlords/${landlordId}"
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${API_PREFIX}/landlords/${landlordId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        // 如果这个接口需要 token，也需要在这里添加
+        // If this interface needs token, it also needs to be added here
         // const token = getToken();
         // if (token) headers.Authorization = token;
       },
@@ -454,7 +453,7 @@ export const getLandlordById = async (landlordId) => {
   }
 };
 
-// 获取用户偏好设置
+// Get user preferences
 export const getUserPreferences = async (category = null) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for getUserPreferences.");
@@ -471,5 +470,5 @@ export const getUserPreferences = async (category = null) => {
   return response.data;
 };
 
-// 导出所有 API 函数
-export default api; // 如果其他地方需要直接使用配置好的 axios 实例
+// Export all API functions
+export default api; // If other places need to use the configured axios instance directly
