@@ -1,20 +1,12 @@
-// 调试日志：输出所有已加载的组件
-console.log("加载的组件：", {
-    HomePage: typeof window.HomePage,
-    LoginPage: typeof window.LoginPage,
-    RegisterPage: typeof window.RegisterPage,
-    RecommendationPage: typeof window.RecommendationPage,
-    PropertyProfile: typeof window.PropertyProfile,
-    RoommateMatchPage: typeof window.RoommateMatchPage
-  });
+
   
   const { useState, useEffect } = React;
   
-  // 简单的加载组件
+  // loading component
   const LoadingComponent = ({ componentName }) => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div style={{ marginBottom: '20px' }}>加载{componentName}中...</div>
+        <div style={{ marginBottom: '20px' }}>loading {componentName}...</div>
         <div style={{ width: '50px', height: '50px', border: '5px solid #f3f3f3', borderTop: '5px solid #3498db', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
         <style>{`
           @keyframes spin {
@@ -26,17 +18,17 @@ console.log("加载的组件：", {
     );
   };
   
-  // 错误信息组件
+  // error component
   const ErrorComponent = ({ error, componentName }) => {
     return (
       <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ color: '#e74c3c' }}>加载{componentName}时出错</h2>
-        <p>{error.message || '未知错误'}</p>
+        <h2 style={{ color: '#e74c3c' }}>error loading {componentName}</h2>
+        <p>{error.message || 'unknown error'}</p>
         <button 
           onClick={() => window.location.reload()} 
           style={{ padding: '10px 15px', background: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '20px' }}
         >
-          重新加载页面
+          reload page
         </button>
       </div>
     );
@@ -48,41 +40,41 @@ console.log("加载的组件：", {
     const [loading, setLoading] = useState(false);
   
     useEffect(() => {
-      // 强制重新检查所有组件
+
       checkComponents();
       
       const handleHashChange = () => {
-        // 重置错误状态
+        // reset error and loading
         setError(null);
         setLoading(true);
         
-        // 获取基本路由（不含参数）
+        // get basic route (without parameters)
         const hash = window.location.hash;
         console.log("Hash changed to:", hash);
   
-        // 处理特殊路由
+        // handle special routes
         if (hash.startsWith('#profile/')) {
           setPage('#profile');
         } else if (hash === '#roommate-match') {
           setPage('#roommate-match');
         } else if (hash === '#roommate%20match') {
-          // 重定向带空格的URL
-          console.log("检测到空格编码的URL，重定向到连字符版本");
+          // redirect URL with space
+          console.log("detected URL with space, redirect to hyphen version");
           window.location.hash = "#roommate-match";
-          return; // 避免继续处理
+          return; // avoid continue processing
         } else {
           setPage(hash);
         }
   
-        // 500ms后关闭加载状态
+        // close loading after 500ms
         setTimeout(() => setLoading(false), 500);
       };
   
-      // 如果没有 hash，设置默认值
+      // if no hash, set default value
       if (!window.location.hash) {
         window.location.hash = '#home';
       } else {
-        // 初始调用以设置正确的页面
+        // initial call to set the correct page
         handleHashChange();
       }
   
@@ -90,7 +82,7 @@ console.log("加载的组件：", {
       return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
   
-    // 检查所有组件是否都已定义
+    // check all components are defined
     const checkComponents = () => {
       const components = {
         HomePage: window.HomePage,
@@ -101,59 +93,58 @@ console.log("加载的组件：", {
         RoommateMatchPage: window.RoommateMatchPage
       };
   
-      console.log("组件状态检查:", Object.keys(components).map(key => `${key}: ${!!components[key]}`).join(', '));
+      console.log("component status check:", Object.keys(components).map(key => `${key}: ${!!components[key]}`).join(', '));
   
       const missingComponents = Object.keys(components).filter(key => !components[key]);
       if (missingComponents.length > 0) {
-        console.warn("缺少组件:", missingComponents.join(", "));
+        console.warn("missing components:", missingComponents.join(", "));
       }
     };
   
-    // 根据当前页面渲染相应组件
+    // render corresponding component based on current page
     const renderPage = () => {
-      // 如果正在加载，显示加载组件
+      // if loading, show loading component
       if (loading) {
-        return <LoadingComponent componentName="页面" />;
+        return <LoadingComponent componentName="page" />;
       }
   
-      // 如果有错误，显示错误组件
+      // if there is an error, show error component
       if (error) {
-        return <ErrorComponent error={error} componentName="页面" />;
+        return <ErrorComponent error={error} componentName="page" />;
       }
   
       try {
-        // 根据页面路径渲染对应组件
+        // render corresponding component based on page path
         switch(page) {
           case '#home':
           case '':
-            return window.HomePage ? React.createElement(window.HomePage) : <LoadingComponent componentName="首页" />;
+            return window.HomePage ? React.createElement(window.HomePage) : <LoadingComponent componentName="home page" />;
           case '#login':
-            return window.LoginPage ? React.createElement(window.LoginPage) : <LoadingComponent componentName="登录页" />;
+            return window.LoginPage ? React.createElement(window.LoginPage) : <LoadingComponent componentName="login page" />;
           case '#register':
-            return window.RegisterPage ? React.createElement(window.RegisterPage) : <LoadingComponent componentName="注册页" />;
+            return window.RegisterPage ? React.createElement(window.RegisterPage) : <LoadingComponent componentName="register page" />;
           case '#recommendation':
-            return window.RecommendationPage ? React.createElement(window.RecommendationPage) : <LoadingComponent componentName="推荐页" />;
+            return window.RecommendationPage ? React.createElement(window.RecommendationPage) : <LoadingComponent componentName="recommendation page" />;
           case '#profile':
-            return window.PropertyProfile ? React.createElement(window.PropertyProfile) : <LoadingComponent componentName="资料页" />;
+            return window.PropertyProfile ? React.createElement(window.PropertyProfile) : <LoadingComponent componentName="profile page" />;
           case '#roommate-match':
-            console.log("尝试渲染聊天页面，组件存在:", !!window.RoommateMatchPage);
-            // 特殊处理聊天页面
+            // special handling for chat page
             if (!window.RoommateMatchPage) {
-              console.error("RoommateMatchPage 组件不存在！");
+              console.error("RoommateMatchPage component not found!");
               return <div>
-                <h2>聊天页面无法加载</h2>
-                <p>RoommateMatchPage 组件未注册。请检查 roommate-match.js 是否正确加载。</p>
-                <button onClick={() => window.location.reload()}>重新加载页面</button>
+                <h2> chat page not found</h2>
+                <p>RoommateMatchPage component not registered. Please check roommate-match.js is loaded correctly.</p>
+                <button onClick={() => window.location.reload()}>reload page</button>
               </div>;
             }
             return React.createElement(window.RoommateMatchPage);
           default:
-            return <div>找不到页面: {page}</div>;
+            return <div>page not found: {page}</div>;
         }
       } catch (err) {
-        console.error("渲染页面时出错:", err);
+        console.error("error rendering page:", err);
         setError(err);
-        return <ErrorComponent error={err} componentName="页面" />;
+        return <ErrorComponent error={err} componentName="page" />;
       }
     };
   
@@ -164,13 +155,13 @@ console.log("加载的组件：", {
     );
   };
   
-  // 渲染应用程序
+  // render application
   try {
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(React.createElement(App));
-    console.log("应用程序成功渲染");
+    console.log("application rendered successfully");
   } catch (error) {
-    console.error("渲染应用程序时出错:", error);
-    document.getElementById('root').innerHTML = '<div style="text-align:center;padding:20px;"><h2>应用程序加载失败</h2><p>请查看控制台了解详细信息。</p></div>';
+    console.error("error rendering application:", error);
+    document.getElementById('root').innerHTML = '<div style="text-align:center;padding:20px;"><h2>application failed to load</h2><p>please check console for details.</p></div>';
   }
 

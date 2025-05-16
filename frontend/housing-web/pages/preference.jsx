@@ -11,14 +11,14 @@ const PreferencePage = () => {
     step3: "",
   });
  
-  const [budget, setBudget] = useState(""); // 用户预算
-  const [preferredLocation, setPreferredLocation] = useState("Oakland"); // 默认位置
-  const [termsAccepted, setTermsAccepted] = useState(false); // 用户是否接受条款
-  const [analyzeResult, setAnalyzeResult] = useState(null); // 图片分析结果
-  const [chatMessages, setChatMessages] = useState([]); // 聊天记录
-  const [userMessage, setUserMessage] = useState(""); // 用户输入的消息
-  const [imagePreview, setImagePreview] = useState(null); // 添加图片预览状态
-  const [errorMessage, setErrorMessage] = useState(""); // 添加错误消息状态
+  const [budget, setBudget] = useState(""); // user budget
+  const [preferredLocation, setPreferredLocation] = useState("Oakland"); // default location
+  const [termsAccepted, setTermsAccepted] = useState(false); // user accept terms
+  const [analyzeResult, setAnalyzeResult] = useState(null); // image analysis result
+  const [chatMessages, setChatMessages] = useState([]); // chat record
+  const [userMessage, setUserMessage] = useState(""); // user input message
+  const [imagePreview, setImagePreview] = useState(null); // image preview state
+  const [errorMessage, setErrorMessage] = useState(""); // error message state
 
   const navigate = useNavigate();
 
@@ -30,7 +30,7 @@ const PreferencePage = () => {
     }
   }, [navigate]);
 
-  // 地点与经纬度映射
+  // location and latitude and longitude mapping
   const locationCoordinates = {
     "Oakland": { lat: 40.4418, lng: -79.9561 },
     "Shadyside": { lat: 40.4520, lng: -79.9343 },
@@ -80,7 +80,7 @@ const PreferencePage = () => {
       console.log("Image analysis result:", result);
 
       setAnalyzeResult(result);
-      setErrorMessage(""); // 清除错误消息
+      setErrorMessage(""); 
       setCurrentStep(3);
     } catch (error) {
       console.error("Error during image analysis:", error);
@@ -116,7 +116,7 @@ const PreferencePage = () => {
     }
   };
 
-  // 渲染租户信息表单
+  // render tenant information form
   const renderProfileForm = () => (
     <div className="register-form" style={{ maxWidth: "400px" }}>
       <h2>Preference</h2>
@@ -170,7 +170,7 @@ const PreferencePage = () => {
     </div>
   );
 
-  // 渲染图片分析表单
+  // render image analysis form
   const renderImageAnalysis = () => (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
       <div className="flex justify-between w-full max-w-2xl p-4">
@@ -224,16 +224,16 @@ const PreferencePage = () => {
     </div>
   );
 
-  // 渲染聊天界面
+  // render chat interface
   const renderChat = () => (
     <div className="flex flex-col items-center justify-between h-screen bg-gray-100">
-      {/* 标题和描述 */}
+      {/* title and description */}
       <div className="w-full max-w-2xl p-6">
         <h1 className="mb-2 text-3xl font-bold">Preference,</h1>
         <p className="mb-4 text-gray-600">Talk about your preferences.</p>
       </div>
   
-      {/* 聊天框 */}
+      {/* chat box */}
       <div className="w-full max-w-2xl flex-1 p-6 bg-white rounded-lg shadow overflow-y-auto">
         {chatMessages.map((msg, index) => (
           <div
@@ -242,7 +242,7 @@ const PreferencePage = () => {
               msg.sender === "user" ? "justify-end" : "justify-start"
             }`}
           >
-            {/* 头像 */}
+            {/* avatar */}
             {msg.sender === "bot" && (
               <div className="w-8 h-8 mr-2 bg-gray-300 rounded-full"></div>
             )}
@@ -255,7 +255,7 @@ const PreferencePage = () => {
             >
               {msg.text}
             </div>
-            {/* 用户头像 */}
+            {/* user avatar */}
             {msg.sender === "user" && (
               <img
                 src="../head.png"
@@ -267,7 +267,7 @@ const PreferencePage = () => {
         ))}
       </div>
   
-      {/* 输入框和发送按钮 */}
+      {/* input box and send button */}
       <div className="w-full max-w-2xl p-6">
         <div className="flex items-center">
           <input
@@ -289,7 +289,7 @@ const PreferencePage = () => {
         )}
       </div>
   
-      {/* Next 按钮 */}
+      {/* Next button */}
       <div className="w-full max-w-2xl p-6">
         <button
           className="w-full px-4 py-2 text-white bg-black rounded-lg hover:bg-gray-800"

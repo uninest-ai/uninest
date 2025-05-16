@@ -11,18 +11,18 @@ const LandlordProfilePage = () => {
     verification_status: false,
     user_id: null,
     rating: 4.8,
-    listed_properties: [], // 动态加载的房产列表
+    listed_properties: [], // dynamic loaded property list
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [propertyImages, setPropertyImages] = useState({}); // 存储每个房产的图片
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // 存储要删除的房产ID
-  const [username, setUsername] = useState(""); // 存储用户名
+  const [propertyImages, setPropertyImages] = useState({}); // store images for each property
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // store property id to delete
+  const [username, setUsername] = useState(""); // store username
 
   const navigate = useNavigate();
 
   const fetchLandlordProfile = async () => {
-    // 检查是否已登录
+    // check if logged in
     const authToken = localStorage.getItem("authToken");
     if (!authToken) {
       console.log("No auth token found, redirecting to login");
@@ -41,7 +41,7 @@ const LandlordProfilePage = () => {
         return;
       }
 
-      // 获取用户信息
+      // get user info
       const userInfo = localStorage.getItem("userInfo");
       let extractedUsername = "";
       if (userInfo) {
@@ -55,7 +55,7 @@ const LandlordProfilePage = () => {
       }
       setUsername(extractedUsername);
 
-      // 设置更完整的个人资料信息
+      // set more complete profile info
       setProfileData({
         name: data.company_name || "Unknown Landlord",
         company_name: data.company_name || "",
@@ -63,16 +63,16 @@ const LandlordProfilePage = () => {
         description: data.description || "",
         verification_status: data.verification_status || false,
         user_id: data.user_id || null,
-        rating: 4.8, // 暂时固定值
+        rating: 4.8, // temporarily fixed value
         listed_properties: data.listed_properties || [],
       });
 
-      // 动态加载每个房产的图片
+      // dynamic load images for each property
       const images = {};
       for (const property of data.listed_properties || []) {
         try {
           const propertyImages = await getPropertyImages(property.id);
-          // 找到主图，如果没有主图则使用第一张图片，如果没有图片则使用默认图片
+          // find primary image, if no primary image, use first image, if no image, use default image
           const primaryImage = propertyImages.find(img => img.is_primary) || propertyImages[0];
           images[property.id] = primaryImage ? primaryImage.image_url : "https://placehold.co/600x400?text=No+Image";
         } catch (err) {
@@ -99,24 +99,24 @@ const LandlordProfilePage = () => {
   }, []);
 
   const handleEditProfile = () => {
-    navigate("/agent-register"); // 使用 React Router 导航
+    navigate("/agent-register"); 
   };
 
   const handlePostNewProperty = () => {
-    navigate("/upload-property"); // 使用 React Router 导航
+    navigate("/upload-property"); 
   };
 
   const handlePropertyClick = (propertyId) => {
-    navigate(`/property-detail/${propertyId}`); // 使用 React Router 导航
+    navigate(`/property-detail/${propertyId}`); 
   };
 
   const handleEditClick = (e, propertyId) => {
-    e.stopPropagation(); // 阻止事件冒泡到卡片点击
-    navigate(`/edit-property/${propertyId}`); // 使用 React Router 导航
+    e.stopPropagation(); // prevent event bubbling to card click
+    navigate(`/edit-property/${propertyId}`); 
   };
 
   const handleDeleteClick = (e, propertyId) => {
-    e.stopPropagation(); // 阻止事件冒泡到卡片点击
+    e.stopPropagation(); // prevent event bubbling to card click
     setDeleteConfirm(propertyId);
   };
 
@@ -125,38 +125,38 @@ const LandlordProfilePage = () => {
       console.log("Attempting to delete property:", propertyId);
       await deleteProperty(propertyId);
       console.log("Property deleted successfully");
-      // 重新获取房东资料以更新列表
+      // get landlord profile again to update list
       await fetchLandlordProfile();
-      setDeleteConfirm(null); // 关闭确认对话框
+      setDeleteConfirm(null); // close confirm dialog
     } catch (err) {
       console.error("Error deleting property:", err);
       let errorMessage = "Failed to delete property. ";
       
       if (err.response) {
-        // 服务器返回了错误响应
+        // server returned error response
         console.error("Server response:", err.response.data);
         errorMessage += `Server error: ${err.response.data.message || err.response.statusText}`;
       } else if (err.request) {
-        // 请求已发出但没有收到响应
+        // request sent but no response
         console.error("No response received:", err.request);
         errorMessage += "No response received from server. Please check your connection.";
       } else {
-        // 请求配置出错
+        // request configuration error
         console.error("Request configuration error:", err.message);
         errorMessage += err.message;
       }
       
       setError(errorMessage);
-      setDeleteConfirm(null); // 关闭确认对话框
+      setDeleteConfirm(null); // close confirm dialog
     }
   };
 
   const handleLogout = () => {
-    // 清除本地存储的认证信息
+    // clear auth info in local storage
     localStorage.removeItem("authToken");
     localStorage.removeItem("userInfo");
-    // 重定向到登录页面
-    navigate("/login"); // 使用 React Router 导航
+    // redirect to login page
+    navigate("/login"); 
   };
 
   if (loading) {
@@ -408,7 +408,7 @@ const LandlordProfilePage = () => {
         </div>
       </div>
 
-      {/* 删除确认对话框 */}
+      {/* delete confirm dialog */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
@@ -424,15 +424,15 @@ const LandlordProfilePage = () => {
               <button
                 onClick={() => handleConfirmDelete(deleteConfirm)}
                 style={{
-                  backgroundColor: "black", // 背景色设置为黑色
-                  color: "white", // 文本颜色设置为白色
-                  padding: "0.5rem 1rem", // 设置内边距
-                  borderRadius: "0.375rem", // 设置圆角
-                  cursor: "pointer", // 鼠标样式
-                  transition: "background-color 0.3s", // 添加平滑的背景切换效果
+                  backgroundColor: "black", 
+                  color: "white",
+                  padding: "0.5rem 1rem", 
+                  borderRadius: "0.375rem", 
+                  cursor: "pointer", 
+                  transition: "background-color 0.3s", 
                 }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "gray")} // 鼠标悬停时的背景色
-                onMouseOut={(e) => (e.target.style.backgroundColor = "black")} // 鼠标移出后恢复黑色
+                onMouseOver={(e) => (e.target.style.backgroundColor = "gray")} 
+                onMouseOut={(e) => (e.target.style.backgroundColor = "black")} 
               >
                 Delete
               </button>

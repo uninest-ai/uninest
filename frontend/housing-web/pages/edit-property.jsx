@@ -29,7 +29,7 @@ const EditPropertyPage = () => {
     image_url: "",
   });
 
-  // 获取房源详情和图片
+  // get property details and images
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -87,7 +87,7 @@ const EditPropertyPage = () => {
     }
   };
 
-  // 处理图片上传
+  // handle image upload
   const handleImageUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -96,7 +96,7 @@ const EditPropertyPage = () => {
     setError("");
 
     try {
-      // 上传所有选择的图片
+      // upload all selected images
       for (const file of files) {
         try {
           await uploadPropertyImage(file, id);
@@ -104,11 +104,11 @@ const EditPropertyPage = () => {
           console.error('Error uploading image:', err);
           const errorMessage = err.response?.data?.detail || err.message || "Failed to upload image";
           setError(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
-          break; // 如果一个文件上传失败，停止上传其他文件
+          break; // if one file upload fails, stop uploading other files
         }
       }
       
-      // 重新获取图片列表
+      // get image list again
       const updatedImages = await getPropertyImages(id);
       setImages(updatedImages);
     } catch (err) {
@@ -117,12 +117,12 @@ const EditPropertyPage = () => {
       setError(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
     } finally {
       setUploadLoading(false);
-      // 清除文件输入
+      // clear file input
       e.target.value = '';
     }
   };
 
-  // 处理图片删除
+  // handle image deletion
   const handleDeleteImage = async (imageId) => {
     if (!window.confirm("Are you sure you want to delete this image?")) {
       return;
@@ -138,7 +138,7 @@ const EditPropertyPage = () => {
     }
   };
 
-  // 设置主图
+  // set primary image
   const handleSetPrimaryImage = async (imageId) => {
     try {
       await setPrimaryImage(id, imageId);
@@ -161,7 +161,7 @@ const EditPropertyPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-5xl mx-auto px-4">
-        {/* 顶部导航 */}
+        {/* top navigation */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Edit Property</h1>
           <button
@@ -181,7 +181,7 @@ const EditPropertyPage = () => {
           </div>
         )}
 
-        {/* 图片管理部分 */}
+        {/* image management part */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Property Images</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
@@ -257,7 +257,7 @@ const EditPropertyPage = () => {
           </div>
         </div>
 
-        {/* 属性编辑表单 */}
+        {/* property edit form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="col-span-2">

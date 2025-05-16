@@ -17,11 +17,11 @@
         
         function logComponentLoad(name) {
             window.componentLoaded[name] = true;
-            console.log(`组件已加载: ${name}`);
+            console.log(`componets loaded: ${name}`);
         }
         
         window.addEventListener('load', function() {
-            console.log('页面完全加载，组件状态: ', window.componentLoaded);
+            console.log('page load totally: ', window.componentLoaded);
             
             
             const requiredComponents = [

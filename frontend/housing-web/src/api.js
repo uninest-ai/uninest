@@ -135,7 +135,7 @@ export const checkLandlordProfile = async () => {
   }
 };
 
-// Get user type (注意：原代码中 token 未定义，已修复)
+// Get user type 
 export const getUserType = async (userId) => {
   const token = getToken(); // 获取 token
   if (!token && userId) { // If getting other user's information, it may not need token, depending on the backend API design
@@ -177,7 +177,7 @@ export const uploadPropertyImage = async (file, propertyId) => {
   const response = await api.post(`${API_PREFIX}/properties/${propertyId}/images`, formData, {
     headers: {
       Authorization: token,
-      // "Content-Type": "multipart/form-data", // Axios 会自动设置
+      // "Content-Type": "multipart/form-data"
     },
   });
   return response.data;
