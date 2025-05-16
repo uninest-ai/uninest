@@ -1,0 +1,26 @@
+# 依赖包
+node_modules/
+__pycache__/
+.pytest_cache/
+**/__pycache__/
+**/.pytest_cache/
+
+# 环境变量
+.env
+**/.env
+
+# 构建目录
+**/dist/
+**/build/
+**/.vite/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# IDE文件
+.idea/
+.vscode/
+*.swp
+
+venv

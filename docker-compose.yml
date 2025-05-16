@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    # ports need to comment out ltr
+    ports:
+      - "8000:8000"
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://uninest_admin:4Iie-ZDx1n.]E*NWG-kf3~#R~)-z@uninest-db.c9aes4a2k2n8.us-east-2.rds.amazonaws.com:5432/uninest
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=uninest
+
+volumes:
+  postgres_data:
