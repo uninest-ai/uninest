@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-// 下拉选择器组件
+// dropdown filter component
 const DropdownFilter = ({ title, options, selectedOption, onSelect }) => {
     const [isOpen, setIsOpen] = useState(false);
     
@@ -34,7 +34,7 @@ const DropdownFilter = ({ title, options, selectedOption, onSelect }) => {
     );
 };
 
-// 星级评分组件
+// star rating component
 const StarRating = ({ rating, reviewCount }) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -58,7 +58,7 @@ const StarRating = ({ rating, reviewCount }) => {
     );
 };
 
-// 房产卡片组件
+// property card component
 const PropertyCard = ({ property }) => {
     return (
         <div className="property-card">
@@ -82,15 +82,15 @@ const PropertyCard = ({ property }) => {
     );
 };
 
-// 主页组件
+// homepage component
 const HomePage = () => {
-    // 筛选器状态
+    // filter state
     const [rentalType, setRentalType] = useState('For Rent');
     const [peopleCount, setPeopleCount] = useState('Any');
     const [propertyType, setPropertyType] = useState('Any');
     const [roomCount, setRoomCount] = useState('Any');
     
-    // 房产数据
+    // property data
     const [properties] = useState([
         {
             id: 1,

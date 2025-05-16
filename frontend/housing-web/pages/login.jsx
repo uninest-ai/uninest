@@ -10,7 +10,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 获取用户尝试访问的页面 
+  // get the page user try to access
   const from = location.state?.from?.pathname || "/recommendation";
   
   const handleLogin = async (e) => {
@@ -18,18 +18,18 @@ const LoginPage = () => {
     setMessage("");
     setError("");
 
-    // 检查输入是否为空
+    // check if input is empty
     if (!email || !password) {
         setError("Email and password are required.");
         return;
     }
 
     try {
-      // 调用登录 API
+      // call login API
       const response = await loginUser(email, password);
       const { access_token, token_type } = response;
 
-      // 保存 token 到 localStorage
+      // save token to localStorage
       const authToken = `${token_type} ${access_token}`;
       localStorage.setItem("authToken", authToken);
       setMessage("Login successful! Redirecting...");
@@ -41,13 +41,13 @@ const LoginPage = () => {
             const userProfile = await getUserProfile();
             const userType = userProfile["user_type"];
             
-            // 存储用户类型到 localStorage
+            // store user type to localStorage
             localStorage.setItem("userType", userType);
 
             if (userType === "tenant") {
                 const tenantProfile = await checkTenantProfile();
                 if (tenantProfile) {
-                    // 重定向到用户尝试访问的页面或推荐页面
+                    // redirect to the page user try to access or recommendation page
                     navigate(from, { replace: true });
                     return;
                 }
@@ -55,7 +55,7 @@ const LoginPage = () => {
             } else if (userType === "landlord") {
                 const landlordProfile = await checkLandlordProfile();
                 if (landlordProfile) {
-                    // 重定向到用户尝试访问的页面或推荐页面
+                    // redirect to the page user try to access or recommendation page
                     navigate(from, { replace: true });
                     return;
                 }
@@ -65,8 +65,8 @@ const LoginPage = () => {
             console.error("Error checking user profile:", err);
             if (err.response?.status === 401) {
               setError("Session expired or unauthorized. Please log in again.");
-              localStorage.removeItem("authToken"); // 清除无效的 token
-              navigate("/login"); // 重定向到登录页面
+              localStorage.removeItem("authToken"); // clear invalid token
+              navigate("/login"); // redirect to login page
             } else {
               setError("An error occurred while fetching user profile.");
             }
@@ -78,8 +78,8 @@ const LoginPage = () => {
           setError("Invalid username or password. Please check your credentials.");
         } else if (err.response?.status === 401) {
             setError("Session expired or unauthorized. Please log in again.");
-            localStorage.removeItem("authToken"); // 清除无效的 token
-            navigate("/login"); // 重定向到登录页面
+            localStorage.removeItem("authToken"); // clear invalid token
+            navigate("/login"); // redirect to login page
         } else {
           setError("An error occurred. Please try again.");
         }
@@ -98,7 +98,7 @@ const LoginPage = () => {
 
       <div className="login-form">
         <form onSubmit={handleLogin}>
-          {/* Email 输入框 */}
+          {/* Email input */}
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
@@ -112,7 +112,7 @@ const LoginPage = () => {
             />
           </div>
 
-          {/* Password 输入框 */}
+          {/* Password input */}
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -126,17 +126,17 @@ const LoginPage = () => {
             />
           </div>
 
-          {/* 登录按钮 */}
+          {/* login button */}
           <button type="submit" className="login-button">
             Log In
           </button>
         </form>
 
-        {/* 成功或错误消息 */}
+        {/* success or error message */}
         {message && <p className="alert alert-success">{message}</p>}
         {error && <p className="alert alert-danger">{error}</p>}
 
-        {/* 跳转到注册页面 */}
+        {/* redirect to register page */}
         <div className="register-options">
           <span>Don't have an account?</span>
           <a onClick={navigateToRegister}>Register</a>
