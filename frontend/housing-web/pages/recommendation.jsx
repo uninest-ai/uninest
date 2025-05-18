@@ -9,7 +9,7 @@ import {
 import {
   getPropertyRecommendations,
   getRoommateRecommendations,
-} from "../src/api"; // 引入 API 方法
+} from "../src/api"; 
 
 const containerStyle = {
   width: "100%",
@@ -35,7 +35,7 @@ const RecommendationPage = () => {
   const libraries = useMemo(() => ["places"], []);
 
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "your-fallback-key",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_API_KEY || "your-fallback-key",
     libraries,
     version: "weekly",
   });

@@ -74,7 +74,7 @@ export const analyzeImage = async (file, analysisType) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await api.post(`${API_PREFIX}/images/analyze?analysis_type=${analysisType}`, formData, {
+  const response = await api.post(`${API_PREFIX}/images/analyze`, formData, {
     headers: {
       Authorization: token,
       "Content-Type": "multipart/form-data", 

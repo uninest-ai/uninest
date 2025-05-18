@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getMessages, sendMessage, getUserDetails } from "../src/api";
 
+
 const ChatPage = () => {
-  const { userId } = useParams(); // 从 URL 获取聊天对象的 userId
+  const { userId: otherUserId } = useParams();
+  const currentUserId = localStorage.getItem("user_id"); // 从登录信息获取
+ 
+  // 计算房间号
+  const roomId = currentUserId < otherUserId
+    ? `${currentUserId}_${otherUserId}`
+    : `${otherUserId}_${currentUserId}`;
+
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]); // 消息列表
   const [newMessage, setNewMessage] = useState(""); // 新消息内容
@@ -13,18 +21,25 @@ const ChatPage = () => {
   }); // 加载状态
   const [error, setError] = useState(null); // 错误信息
   const [userDetails, setUserDetails] = useState(null); // 聊天对象的用户信息
+  const [ws, setWS] = useState(null);
+  const wsRef = useRef(null);
+
+  const rawToken = localStorage.getItem("authToken");
+  const token = rawToken?.toLowerCase().startsWith("bearer ")
+    ? rawToken.slice(7).trim()
+    : rawToken;
 
   // 加载聊天对象的用户信息
   useEffect(() => {
     const fetchUserDetails = async () => {
-      if (!userId) {
+      if (!otherUserId) {
         console.log("No userId provided");
         return;
       }
 
       try {
         setLoading((prev) => ({ ...prev, userDetails: true }));
-        const response = await getUserDetails(userId);
+        const response = await getUserDetails(otherUserId);
         console.log("User details response:", response);
         setUserDetails(response);
       } catch (error) {
@@ -36,19 +51,19 @@ const ChatPage = () => {
     };
 
     fetchUserDetails();
-  }, [userId]);
+  }, [otherUserId]);
 
   // 加载消息列表
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!userId) {
+      if (!otherUserId) {
         console.log("No userId provided");
         return;
       }
 
       try {
         setLoading((prev) => ({ ...prev, messages: true }));
-        const response = await getMessages(userId);
+        const response = await getMessages(otherUserId);
         console.log("Messages response:", response);
 
         if (!Array.isArray(response)) {
@@ -68,7 +83,35 @@ const ChatPage = () => {
     };
 
     fetchMessages();
-  }, [userId]);
+  }, [otherUserId]);
+
+  useEffect(() => {
+    // 只在没有连接或连接已关闭时创建新连接
+    if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+      console.log("WebSocket token:", token);
+      wsRef.current = new WebSocket(`ws://localhost:8000/api/v1/messages/ws/${otherUserId}?token=${token}`);
+      setWS(wsRef.current);
+
+      wsRef.current.onopen = () => console.log("WebSocket opened");
+      wsRef.current.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          setMessages((prev) => [...prev, msg]);
+        } catch {
+          setMessages((prev) => [...prev, event.data]);
+        }
+      };
+      wsRef.current.onerror = (e) => console.error("WebSocket error", e);
+      wsRef.current.onclose = (e) => console.log("WebSocket closed", e);
+    }
+
+    return () => {
+      // 只在连接是 OPEN 状态时关闭
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+    };
+  }, [otherUserId, token]);
 
   // 发送消息
   const handleSendMessage = async (e) => {
@@ -76,18 +119,22 @@ const ChatPage = () => {
     if (!newMessage.trim()) return;
 
     try {
-      const response = await sendMessage({
+      await sendMessage({
         content: newMessage.trim(),
-        receiver_id: parseInt(userId),
+        receiver_id: parseInt(otherUserId),
       });
-
-      console.log("Send message response:", response);
-
-      setMessages((prevMessages) => [...prevMessages, response]);
       setNewMessage("");
+      // 不需要 setMessages，等 WebSocket 收到推送再更新 UI
     } catch (error) {
-      console.error("Error sending message:", error);
       setError("Failed to send message. Please try again.");
+    }
+  };
+
+  const sendWebSocketMessage = (e) => {
+    e.preventDefault();
+    if (ws && newMessage) {
+      ws.send(newMessage);
+      setNewMessage("");
     }
   };
 
@@ -187,12 +234,12 @@ const ChatPage = () => {
                     {/* 用户名 */}
                     <div
                       className={`mb-1 text-sm ${
-                        message.sender_id === parseInt(userId)
+                        message.sender_id === parseInt(otherUserId)
                           ? "text-left text-gray-600"
                           : "text-right text-gray-600"
                       }`}
                     >
-                      {message.sender_id === parseInt(userId)
+                      {message.sender_id === parseInt(otherUserId)
                         ? userDetails?.username || "User"
                         : "You"}
                     </div>
@@ -200,10 +247,10 @@ const ChatPage = () => {
                     {/* 消息气泡 */}
                     <div
                       className={`flex ${
-                        message.sender_id === parseInt(userId) ? "justify-start" : "justify-end"
+                        message.sender_id === parseInt(otherUserId) ? "justify-start" : "justify-end"
                       }`}
                     >
-                      {message.sender_id === parseInt(userId) && (
+                      {message.sender_id === parseInt(otherUserId) && (
                         <div className="flex-shrink-0 mr-3">
                           <img
                             src={userDetails?.avatar_url || "/head.png"}
@@ -214,7 +261,7 @@ const ChatPage = () => {
                       )}
                       <div
                         className={`px-4 py-2 rounded-[20px] max-w-[75%] ${
-                          message.sender_id === parseInt(userId)
+                          message.sender_id === parseInt(otherUserId)
                             ? "bg-white text-black rounded-bl-[5px] shadow-sm"
                             : "bg-[#0084ff] text-white rounded-br-[5px]"
                         }`}
@@ -226,7 +273,7 @@ const ChatPage = () => {
                     {/* 时间戳 */}
                     <div
                       className={`mt-1 text-xs ${
-                        message.sender_id === parseInt(userId) ? "text-left" : "text-right"
+                        message.sender_id === parseInt(otherUserId) ? "text-left" : "text-right"
                       } text-gray-500`}
                     >
                       {message.timestamp
