@@ -21,6 +21,8 @@ const center = {
   lng: -79.94,
 };
 
+
+
 const RecommendationPage = () => {
   const navigate = useNavigate();
   const [properties, setProperties] = useState([]);

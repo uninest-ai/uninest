@@ -6,7 +6,7 @@ import { getMessages, sendMessage, getUserDetails } from "../src/api";
 const ChatPage = () => {
   const { userId: otherUserId } = useParams();
   const currentUserId = localStorage.getItem("user_id"); // 从登录信息获取
- 
+  const messagesEndRef = useRef(null);
   // 计算房间号
   const roomId = currentUserId < otherUserId
     ? `${currentUserId}_${otherUserId}`
@@ -86,7 +86,6 @@ const ChatPage = () => {
   }, [otherUserId]);
 
   useEffect(() => {
-    // 只在没有连接或连接已关闭时创建新连接
     if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
       console.log("WebSocket token:", token);
       wsRef.current = new WebSocket(`ws://localhost:8000/api/v1/messages/ws/${otherUserId}?token=${token}`);
@@ -112,6 +111,12 @@ const ChatPage = () => {
       }
     };
   }, [otherUserId, token]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   // 发送消息
   const handleSendMessage = async (e) => {
@@ -159,7 +164,7 @@ const ChatPage = () => {
           </h1>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate("/recommendation")}
+              onClick={() => navigate("/roommate-match")}
               className="w-10 h-10 rounded-full bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex items-center justify-center border-2 border-gray-200"
             >
               <svg 
@@ -292,10 +297,11 @@ const ChatPage = () => {
                 </div>
               )}
             </div>
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Message Input */}
-          <div className="bg-white border-t px-4 py-3">
+          <div className="bg-white border-t px-4 py-3 fixed bottom-0 left-0 right-0">
             <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto flex items-center gap-3">
               <input
                 type="text"
