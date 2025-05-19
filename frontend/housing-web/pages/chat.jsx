@@ -87,7 +87,7 @@ const ChatPage = () => {
 
   useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-      console.log("WebSocket token:", token);
+
       wsRef.current = new WebSocket(`ws://localhost:8000/api/v1/messages/ws/${otherUserId}?token=${token}`);
       setWS(wsRef.current);
 

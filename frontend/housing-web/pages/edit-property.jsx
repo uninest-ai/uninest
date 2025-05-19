@@ -99,11 +99,31 @@ const EditPropertyPage = () => {
       // upload all selected images
       for (const file of files) {
         try {
+          console.log('Uploading file:', {
+            name: file.name,
+            type: file.type,
+            size: file.size
+          });
           await uploadPropertyImage(file, id);
         } catch (err) {
           console.error('Error uploading image:', err);
-          const errorMessage = err.response?.data?.detail || err.message || "Failed to upload image";
-          setError(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+          console.error('Error details:', {
+            status: err.response?.status,
+            data: err.response?.data,
+            headers: err.response?.headers,
+            config: err.config
+          });
+          let errorMessage = "Failed to upload image";
+          if (err.response?.data?.detail) {
+            if (Array.isArray(err.response.data.detail)) {
+              errorMessage = err.response.data.detail[0].msg || errorMessage;
+            } else if (typeof err.response.data.detail === 'string') {
+              errorMessage = err.response.data.detail;
+            }
+          } else if (err.message) {
+            errorMessage = err.message;
+          }
+          setError(errorMessage);
           break; // if one file upload fails, stop uploading other files
         }
       }
@@ -113,8 +133,23 @@ const EditPropertyPage = () => {
       setImages(updatedImages);
     } catch (err) {
       console.error('Error in image upload process:', err);
-      const errorMessage = err.response?.data?.detail || err.message || "Failed to upload image";
-      setError(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+      console.error('Error details:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        headers: err.response?.headers,
+        config: err.config
+      });
+      let errorMessage = "Failed to upload image";
+      if (err.response?.data?.detail) {
+        if (Array.isArray(err.response.data.detail)) {
+          errorMessage = err.response.data.detail[0].msg || errorMessage;
+        } else if (typeof err.response.data.detail === 'string') {
+          errorMessage = err.response.data.detail;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     } finally {
       setUploadLoading(false);
       // clear file input

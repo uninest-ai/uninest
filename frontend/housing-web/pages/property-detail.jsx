@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getPropertyDetails, getPropertyImages } from "../src/api";
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { GoogleMap, LoadScript, Marker, MarkerF } from '@react-google-maps/api';
 
 const mapContainerStyle = {
   width: '100%',
   height: '400px',
   borderRadius: '0.5rem'
 };
+
+const googleMapsApiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
 const PropertyDetail = () => {
   const navigate = useNavigate();
@@ -58,6 +60,7 @@ const PropertyDetail = () => {
     if (id) {
       fetchPropertyData();
     }
+    
   }, [id]);
 
   const handleProfileClick = () => {
@@ -255,13 +258,13 @@ const PropertyDetail = () => {
               
               {mapCenter && (
                 <div className="w-full h-[400px] rounded-lg overflow-hidden shadow-md">
-                  <LoadScript googleMapsApiKey="AIzaSyAJhWtvpcrFZvFXG1pYobmIJiDtr1qxtoM">
+                  <LoadScript googleMapsApiKey={googleMapsApiKey}>
                     <GoogleMap
                       mapContainerStyle={mapContainerStyle}
                       zoom={15}
                       center={mapCenter}
                     >
-                      <Marker
+                      <MarkerF
                         position={mapCenter}
                         title={property.title}
                       />
@@ -330,7 +333,7 @@ const PropertyDetail = () => {
                 )}
 
                 {/* Contact Button */}
-                <div className="mt-6">
+                {/* <div className="mt-6">
                   <button
                     onClick={() => navigate(`/chat?landlord=${property.landlord_name}`)}
                     className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -340,7 +343,7 @@ const PropertyDetail = () => {
                     </svg>
                     Message Landlord
                   </button>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

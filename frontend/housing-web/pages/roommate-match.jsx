@@ -123,9 +123,9 @@ const ChatPage = () => {
   }, [navigate, roommateId, authChecked]);
 
   useEffect(() => {
-    // 只在没有连接或连接已关闭时创建新连接
+
     if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-      console.log("WebSocket token:", token);
+
       wsRef.current = new WebSocket(`ws://localhost:8000/api/v1/messages/ws/${selectedUser}?token=${token}`);
       setWS(wsRef.current);
 

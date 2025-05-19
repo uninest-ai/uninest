@@ -12,6 +12,28 @@ const api = axios.create({
     },
 });
 
+// === 这里添加响应拦截器 ===
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      // 可选：只针对认证相关接口
+      (error.response.data?.detail === "Could not validate credentials" ||
+        error.response.data?.detail === "Not authenticated" ||
+        error.response.data?.detail === "Unauthorized")
+    ) {
+      // 清除本地 token
+      localStorage.removeItem("authToken");
+      // 跳转到登录页
+      window.location.href = "/login";
+    }
+    // 其他错误继续抛出
+    return Promise.reject(error);
+  }
+);
+
 // Define a unified API path prefix
 const API_PREFIX = "/api/v1";
 
@@ -172,13 +194,15 @@ export const uploadPropertyImage = async (file, propertyId) => {
   if (!token) throw new Error("Authorization token is missing for uploadPropertyImage.");
 
   const formData = new FormData();
-  formData.append("files", file); // The backend FastAPI UploadFile parameter name is usually 'file' or 'files'
+  formData.append("files", file); // Changed from "files" to "file"
+  
 
   const response = await api.post(`${API_PREFIX}/properties/${propertyId}/images`, formData, {
     headers: {
       Authorization: token,
-      // "Content-Type": "multipart/form-data"
+      "Content-Type": "multipart/form-data", 
     },
+    transformRequest: [(data) => data], // Prevent axios from transforming FormData
   });
   return response.data;
 };
