@@ -84,7 +84,19 @@ const PreferencePage = () => {
       setCurrentStep(3);
     } catch (error) {
       console.error("Error during image analysis:", error);
-      setErrorMessage("An error occurred while analyzing the image.");
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === "string") {
+          setErrorMessage(error.response.data.detail);
+        } else if (Array.isArray(error.response.data.detail)) {
+          setErrorMessage(error.response.data.detail.map(d => d.msg).join("; "));
+        } else {
+          setErrorMessage("Server error: " + JSON.stringify(error.response.data.detail));
+        }
+      } else if (error.message === "Authorization token is missing for analyzeImage.") {
+        setErrorMessage("Please log in to analyze images.");
+      } else {
+        setErrorMessage("An error occurred while analyzing the image. Please try again.");
+      }
     }
   };
 
@@ -274,6 +286,12 @@ const PreferencePage = () => {
             type="text"
             value={userMessage}
             onChange={(e) => setUserMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             placeholder="Let's talk about your ideal house!"
             className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
           />

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getConversations, getMessages, sendMessage, getUserDetails } from "../src/api";
 import { useParams, useNavigate } from "react-router-dom";
 
 const ChatPage = () => {
   const { roommateId } = useParams(); // 从 URL 提取用户 ID
   const navigate = useNavigate();
-
+  const messagesEndRef = useRef(null);
   const [conversations, setConversations] = useState([]); // 会话列表
   const [messages, setMessages] = useState([]); // 当前聊天记录
   const [selectedUser, setSelectedUser] = useState(null); // Initialize as null
@@ -19,6 +19,12 @@ const ChatPage = () => {
   const [authChecked, setAuthChecked] = useState(false);
   const [userType, setUserType] = useState("tenant"); // Added for the new button
 
+  const rawToken = localStorage.getItem("authToken");
+  const token = rawToken?.toLowerCase().startsWith("bearer ")
+    ? rawToken.slice(7).trim()
+    : rawToken;
+  const wsRef = useRef(null);
+  const [ws, setWS] = useState(null);
   // 检查认证状态
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
@@ -116,6 +122,39 @@ const ChatPage = () => {
     fetchConversations();
   }, [navigate, roommateId, authChecked]);
 
+  useEffect(() => {
+
+    if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+
+      wsRef.current = new WebSocket(`ws://localhost:8000/api/v1/messages/ws/${selectedUser}?token=${token}`);
+      setWS(wsRef.current);
+
+      wsRef.current.onopen = () => console.log("WebSocket opened");
+      wsRef.current.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          setMessages((prev) => [...prev, msg]);
+        } catch {
+          setMessages((prev) => [...prev, event.data]);
+        }
+      };
+      wsRef.current.onerror = (e) => console.error("WebSocket error", e);
+      wsRef.current.onclose = (e) => console.log("WebSocket closed", e);
+    }
+
+    return () => {
+      // 只在连接是 OPEN 状态时关闭
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+    };
+  }, [selectedUser, token]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
   // 加载与选中用户的消息记录
   useEffect(() => {
     const fetchMessages = async () => {
@@ -158,10 +197,8 @@ const ChatPage = () => {
         content: newMessage.trim(),
       });
 
-      if (response) {
-        setMessages((prev) => [...prev, response]); // 添加新消息到消息列表
         setNewMessage(""); // 清空输入框
-      }
+
     } catch (error) {
       console.error("Error sending message:", error);
       setError("Failed to send message. Please try again.");
@@ -332,14 +369,14 @@ const ChatPage = () => {
                   <div
                     key={index}
                     className={`flex mb-4 ${
-                      message.sender_id === parseInt(localStorage.getItem("userId")) ? "justify-end" : "justify-start"
+                      message.sender_id === selectedUser  ?  "justify-start" : "justify-end"
                     }`}
                   >
                     <div
                       className={`max-w-[70%] p-3 rounded-lg ${
-                        message.sender_id === parseInt(localStorage.getItem("userId"))
-                          ? "bg-[#007AFF] text-white"
-                          : "bg-[#E5E5EA] text-black"
+                        message.sender_id === selectedUser
+                          ? "bg-[#E5E5EA] text-black"  
+                          : "bg-[#007AFF] text-white"
                       }`}
                     >
                       {message.content}
@@ -347,6 +384,7 @@ const ChatPage = () => {
                   </div>
                 ))
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* 输入区域 */}

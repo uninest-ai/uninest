@@ -31,7 +31,7 @@ const LandlordProfilePage = () => {
     }
 
     try {
-      console.log("Fetching landlord profile with token:", authToken);
+      console.log("Fetching landlord profile with token:");
       const data = await getLandlordProfile();
       console.log("Received landlord profile data:", data);
       
