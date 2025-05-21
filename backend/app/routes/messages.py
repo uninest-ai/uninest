@@ -1,16 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi import APIRouter, Depends, HTTPException, status, Body, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import List, Optional
+import json
+from jose import jwt, JWTError
 
 from app.database import get_db
 from app.models import User, Message
 from app.schemas import MessageCreate, MessageResponse, MessageUpdate
 from app.auth import get_current_user
+from app.config import settings
 
 router = APIRouter()
 
+active_connections = {}
+
 @router.post("/", response_model=MessageResponse)
-def send_message(
+async def send_message(
     message: MessageCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -38,7 +43,19 @@ def send_message(
     db.add(db_message)
     db.commit()
     db.refresh(db_message)
-    
+
+    #send to WebSocket
+    room_id = f"{min(current_user.id, message.receiver_id)}_{max(current_user.id, message.receiver_id)}"
+    msg_data = {
+        "content": db_message.content,
+        "sender_id": db_message.sender_id,
+        "receiver_id": db_message.receiver_id,
+        "timestamp": db_message.timestamp.isoformat(),
+        "id": db_message.id,
+    }
+    for ws in active_connections.get(room_id, []):
+        await ws.send_text(json.dumps(msg_data))
+
     return db_message
 
 @router.get("/", response_model=List[MessageResponse])
@@ -170,3 +187,41 @@ def mark_message_as_read(
     db.refresh(message)
     
     return message
+
+async def get_user_from_token(token: str, db):
+    print("Token received:", token)
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        print("Decoded payload:", payload)
+        email: str = payload.get("sub")
+        if email is None:
+            print("No sub in token payload")
+            return None
+        user = db.query(User).filter(User.email == email).first()
+        print("User found:", user)
+        return user
+    except JWTError as e:
+        print("JWTError:", e)
+        return None
+
+@router.websocket("/ws/{other_user_id}")
+async def websocket_endpoint(websocket: WebSocket, other_user_id: int, db: Session = Depends(get_db)):
+    
+    print("WebSocket endpoint called")
+    await websocket.accept()
+    token = websocket.query_params.get("token")
+    user = await get_user_from_token(token, db)
+    if not user:
+        print("WebSocket auth failed, closing connection.")
+        await websocket.close(code=1008,reason="Authentication failed")
+        return
+    print("WebSocket auth success, user:", user.email)
+    room_id = f"{min(user.id, other_user_id)}_{max(user.id, other_user_id)}"
+    if room_id not in active_connections:
+        active_connections[room_id] = []
+    active_connections[room_id].append(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  
+    except WebSocketDisconnect:
+        active_connections[room_id].remove(websocket)
