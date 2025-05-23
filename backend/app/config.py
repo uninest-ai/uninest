@@ -8,8 +8,7 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # Database settings
-    # DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:123456@localhost/horizonhome")
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:webappccc@database-1.cnmc6q0ai3ke.us-east-2.rds.amazonaws.com:5432/my_database")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "your-database-url-please-change-in-production")
     
     # JWT settings
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-for-jwt-please-change-in-production")

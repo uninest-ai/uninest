@@ -2,34 +2,51 @@ version: '3.8'
 
 services:
   backend:
-    # ports need to comment out ltr
+    build:
+      context: . # Docker 构建上下文是项目根目录
+      dockerfile: docker/backend/Dockerfile # Dockerfile 的路径
     ports:
       - "8000:8000"
-    build:
-      context: .
-      dockerfile: docker/backend/Dockerfile
     environment:
-      - DATABASE_URL=postgresql://uninest_admin:UniNest070809@uninest-db.c9aes4a2k2n8.us-east-2.rds.amazonaws.com:5432/uninest
-    depends_on:
-      - db
+      # 这些变量会从项目根目录的 .env 文件中自动加载并注入到 backend 容器
+      - DATABASE_URL=${DATABASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      # VITE_API_BASE_URL 和 EC2_PUBLIC_IP 通常不需要在后端环境
+    restart: unless-stopped # 推荐：容器异常退出时自动重启
+    # depends_on: - db # 如果你使用外部 RDS，则不需要依赖本地 db 服务
 
   frontend:
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
     ports:
-      - "80:80"
+      - "80:80" # 通常前端通过 Nginx 运行在 80 端口
+    environment:
+      # 如果前端构建时需要知道 API 地址
+      # 这些变量需要通过 ARG 传递到前端的 Dockerfile 内部，并在构建时使用
+      # 或者，如果前端是运行时配置，则这样注入即可
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL} # 示例
     depends_on:
       - backend
+    restart: unless-stopped
 
-  db:
-    image: postgres:13
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=uninest
+  # 如果你确实在本地开发时需要一个 Postgres 数据库 (与 RDS 并行或用于测试)
+  # db:
+  #   image: postgres:13
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   environment:
+  #     # 这些值应与你的 .env 中的 DATABASE_URL (如果用于本地) 分开管理或保持一致
+  #     - POSTGRES_USER=your_local_db_user # 建议从 .env 读取, e.g., ${LOCAL_DB_USER}
+  #     - POSTGRES_PASSWORD=your_local_db_password # 建议从 .env 读取
+  #     - POSTGRES_DB=your_local_db_name # 建议从 .env 读取
+  #   ports:
+  #     - "5433:5432" # 映射到不同主机端口以避免与外部 RDS 混淆
+  #   restart: unless-stopped
 
-volumes:
-  postgres_data:
+# volumes: # 只有在你使用本地 db 服务时才需要这个
+#   postgres_data:
