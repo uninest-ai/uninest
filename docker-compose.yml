@@ -15,6 +15,8 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+      - ADMIN_SECRET=${ADMIN_SECRET}
       # VITE_API_BASE_URL 和 EC2_PUBLIC_IP 通常不需要在后端环境
     restart: unless-stopped # 推荐：容器异常退出时自动重启
     # depends_on: - db # 如果你使用外部 RDS，则不需要依赖本地 db 服务

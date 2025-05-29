@@ -7,6 +7,7 @@ import os
 from app.database import get_db
 from app.models import LandlordProfile, User
 from app.services.rapidapi_fetcher import RapidAPIFetcher
+from app.services.realtor16_fetcher import Realtor16Fetcher
 
 router = APIRouter()
 
@@ -149,7 +150,8 @@ async def admin_fetch_properties(
     
     try:
         # 初始化获取器
-        fetcher = RapidAPIFetcher(api_key)
+        # fetcher = RapidAPIFetcher(api_key)
+        fetcher = Realtor16Fetcher(api_key)
         
         # 获取房源
         result = fetcher.get_real_properties(
