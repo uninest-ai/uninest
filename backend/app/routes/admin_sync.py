@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import os
 
 from app.database import get_db
-from app.models import LandlordProfile, User
+from app.models import LandlordProfile, User, Property  
 from app.services.rapidapi_fetcher import RapidAPIFetcher
 from app.services.realtor16_fetcher import Realtor16Fetcher
 
