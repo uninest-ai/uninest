@@ -329,41 +329,24 @@ async def admin_cleanup_properties(
         "message": f"Cleaned up {cleanup_count} properties older than {older_than_days} days"
     }
 
-@router.post("/admin/fetch-real-properties", response_model=dict)
+@router.post("/admin/fetch-real-properties")
 async def admin_fetch_real_properties_with_landlords(
     property_count: int = 20,
     admin_verified: bool = Depends(verify_admin_key),
     db: Session = Depends(get_db)
 ):
-    """
-    获取真实房源并自动创建对应的真实房东
+    """获取真实房源并自动创建对应的真实房东"""
     
-    使用方法:
-    curl -X POST "http://3.14.150.166:8000/api/v1/admin/fetch-real-properties?property_count=15" \
-      -H "X-Admin-Key: Admin123456"
-    """
-    
-    # 检查API密钥
     api_key = os.getenv("RAPIDAPI_KEY")
     if not api_key:
-        raise HTTPException(
-            status_code=500,
-            detail="RapidAPI key not configured"
-        )
+        raise HTTPException(status_code=500, detail="RapidAPI key not configured")
     
-    # 限制单次获取数量
     if property_count > 50:
         property_count = 50
     
     try:
-        # 使用新的获取器
         fetcher = Realtor16Fetcher(api_key)
-        
-        # 获取房源并自动创建房东
-        result = fetcher.get_real_properties_with_landlords(
-            db=db,
-            limit=property_count
-        )
+        result = fetcher.get_real_properties_with_landlords(db=db, limit=property_count)
         
         return {
             "success": result['success'],
@@ -372,14 +355,11 @@ async def admin_fetch_real_properties_with_landlords(
             "created_landlords": result.get('created_landlords', 0),
             "api_calls_used": result.get('api_calls_used', 1),
             "message": result.get('message', ''),
-            "properties_preview": result.get('properties', [])[:3]  # 显示前3个
+            "properties_preview": result.get('properties', [])[:3]
         }
         
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error during real property fetch: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 @router.get("/admin/real-landlords")
 async def list_real_landlords(
