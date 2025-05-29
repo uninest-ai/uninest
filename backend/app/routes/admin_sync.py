@@ -418,3 +418,56 @@ async def list_real_landlords(
         "total_real_landlords": len(real_landlords),
         "landlords": landlords_info
     }
+    
+    
+@router.delete("/admin/reset-database")
+async def reset_database(
+    confirm: str = "RESET_ALL_DATA",
+    admin_verified: bool = Depends(verify_admin_key),
+    db: Session = Depends(get_db)
+):
+    """
+    清空所有房源和房东数据（保留用户账户）
+    
+    使用方法:
+    curl -X DELETE "http://3.14.150.166:8000/api/v1/admin/reset-database?confirm=RESET_ALL_DATA" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    if confirm != "RESET_ALL_DATA":
+        raise HTTPException(
+            status_code=400,
+            detail="Must provide confirm=RESET_ALL_DATA to reset database"
+        )
+    
+    try:
+        # 删除所有房源
+        properties_deleted = db.query(Property).delete()
+        
+        # 删除所有房东资料
+        landlords_deleted = db.query(LandlordProfile).delete()
+        
+        # 删除所有房东用户账户（邮箱包含realtor16.auto的）
+        auto_users_deleted = db.query(User).filter(
+            User.email.like('%realtor16.auto%')
+        ).delete(synchronize_session=False)
+        
+        # 可选：删除所有用户（如果您想完全重置）
+        # all_users_deleted = db.query(User).delete()
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "Database reset completed",
+            "properties_deleted": properties_deleted,
+            "landlords_deleted": landlords_deleted,
+            "auto_users_deleted": auto_users_deleted
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error resetting database: {str(e)}"
+        )
