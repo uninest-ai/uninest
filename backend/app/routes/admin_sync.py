@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from pydantic import BaseModel
 import os
+from sqlalchemy import text 
 
 from app.database import get_db
 from app.models import LandlordProfile, User, Property  
@@ -419,7 +420,7 @@ async def list_real_landlords(
         "landlords": landlords_info
     }
     
-    
+
 @router.delete("/admin/reset-database")
 async def reset_database(
     confirm: str = "RESET_ALL_DATA",
@@ -435,16 +436,18 @@ async def reset_database(
         )
     
     try:
-        # 按依赖关系顺序删除数据
+        # 使用text()包装所有SQL语句
         
         # 1. 删除关联表数据
-        db.execute("DELETE FROM property_preferences")
-        db.execute("DELETE FROM roommate_preferences") 
+        db.execute(text("DELETE FROM property_preferences"))
+        db.execute(text("DELETE FROM roommate_preferences"))
         
         # 2. 删除房源相关数据
-        db.execute("DELETE FROM property_images")
-        db.execute("DELETE FROM comments")
-        db.execute("DELETE FROM interactions")
+        db.execute(text("DELETE FROM property_images"))
+        db.execute(text("DELETE FROM comments"))
+        db.execute(text("DELETE FROM interactions"))
+        db.execute(text("DELETE FROM messages"))
+        db.execute(text("DELETE FROM user_preferences"))
         
         # 3. 删除房源
         properties_deleted = db.query(Property).delete()
@@ -456,10 +459,6 @@ async def reset_database(
         auto_users_deleted = db.query(User).filter(
             User.email.like('%realtor16.auto%')
         ).delete(synchronize_session=False)
-        
-        # 6. 删除其他关联数据
-        db.execute("DELETE FROM messages")
-        db.execute("DELETE FROM user_preferences")
         
         db.commit()
         
