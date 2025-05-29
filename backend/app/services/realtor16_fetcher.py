@@ -98,11 +98,7 @@ class Realtor16Fetcher:
                         longitude=processed_property.get('longitude'),
                         landlord_id=landlord_profile.id,
                         is_active=True,
-                        labels=[{
-                            'source': 'realtor16_api',
-                            'real_landlord': True,
-                            'import_date': str(datetime.utcnow().date())
-                        }]
+                        labels=[]
                     )
                     
                     db.add(new_property)
