@@ -426,13 +426,7 @@ async def reset_database(
     admin_verified: bool = Depends(verify_admin_key),
     db: Session = Depends(get_db)
 ):
-    """
-    清空所有房源和房东数据（保留用户账户）
-    
-    使用方法:
-    curl -X DELETE "http://3.14.150.166:8000/api/v1/admin/reset-database?confirm=RESET_ALL_DATA" \
-      -H "X-Admin-Key: Admin123456"
-    """
+    """清空所有房源和房东数据"""
     
     if confirm != "RESET_ALL_DATA":
         raise HTTPException(
@@ -441,19 +435,31 @@ async def reset_database(
         )
     
     try:
-        # 删除所有房源
+        # 按依赖关系顺序删除数据
+        
+        # 1. 删除关联表数据
+        db.execute("DELETE FROM property_preferences")
+        db.execute("DELETE FROM roommate_preferences") 
+        
+        # 2. 删除房源相关数据
+        db.execute("DELETE FROM property_images")
+        db.execute("DELETE FROM comments")
+        db.execute("DELETE FROM interactions")
+        
+        # 3. 删除房源
         properties_deleted = db.query(Property).delete()
         
-        # 删除所有房东资料
+        # 4. 删除房东资料
         landlords_deleted = db.query(LandlordProfile).delete()
         
-        # 删除所有房东用户账户（邮箱包含realtor16.auto的）
+        # 5. 删除自动生成的用户
         auto_users_deleted = db.query(User).filter(
             User.email.like('%realtor16.auto%')
         ).delete(synchronize_session=False)
         
-        # 可选：删除所有用户（如果您想完全重置）
-        # all_users_deleted = db.query(User).delete()
+        # 6. 删除其他关联数据
+        db.execute("DELETE FROM messages")
+        db.execute("DELETE FROM user_preferences")
         
         db.commit()
         
