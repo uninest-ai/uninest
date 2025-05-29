@@ -6,6 +6,7 @@ from app.routes import auth, users, properties, profile, messages
 from app.database import engine, Base
 
 from app.routes import image_analysis, chat_ai, recommendations
+from app.routes import admin_sync
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -99,4 +100,10 @@ app.include_router(
     messages.router,
     prefix=f"{settings.API_V1_STR}/messages",
     tags=["Messages"]
+)
+
+app.include_router(
+    admin_sync.router,
+    prefix=f"{settings.API_V1_STR}",
+    tags=["Admin Management"]
 )
