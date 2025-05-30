@@ -69,3 +69,9 @@ docker-compose logs
   "confirm_password": "User0000"
 }
 ```
+
+### Commands:
+1. reset db
+```
+curl -X POST "http://3.14.150.166:8000/api/v1/admin/fetch-real-properties?property_count=5"   -H "X-Admin-Key: MY-ADMIN-KEY"
+```
