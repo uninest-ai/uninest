@@ -15,10 +15,14 @@ const PreferencePage = () => {
   const [preferredLocation, setPreferredLocation] = useState("Oakland"); // default location
   const [termsAccepted, setTermsAccepted] = useState(false); // user accept terms
   const [analyzeResult, setAnalyzeResult] = useState(null); // image analysis result
-  const [chatMessages, setChatMessages] = useState([]); // chat record
+  const [chatMessages, setChatMessages] = useState([
+    { sender: "bot", text: "Let's talk about what kind of room you like!" }
+  ]); // chat record with initial welcome message
   const [userMessage, setUserMessage] = useState(""); // user input message
   const [imagePreview, setImagePreview] = useState(null); // image preview state
   const [errorMessage, setErrorMessage] = useState(""); // error message state
+  const [isImageLoading, setIsImageLoading] = useState(false); // image analysis loading state
+  const [isChatLoading, setIsChatLoading] = useState(false); // chat response loading state
 
   const navigate = useNavigate();
 
@@ -75,6 +79,9 @@ const PreferencePage = () => {
         return;
       }
 
+      setIsImageLoading(true);
+      setErrorMessage("");
+
       const file = fileInput.files[0];
       const result = await analyzeImage(file, "tenant_preference");
       console.log("Image analysis result:", result);
@@ -97,6 +104,8 @@ const PreferencePage = () => {
       } else {
         setErrorMessage("An error occurred while analyzing the image. Please try again.");
       }
+    } finally {
+      setIsImageLoading(false);
     }
   };
 
@@ -107,6 +116,9 @@ const PreferencePage = () => {
     }
 
     try {
+      setIsChatLoading(true);
+      setErrorMessage("");
+      
       setChatMessages((prevMessages) => [
         ...prevMessages,
         { sender: "user", text: userMessage },
@@ -121,10 +133,11 @@ const PreferencePage = () => {
       ]);
 
       setUserMessage("");
-      setErrorMessage(""); // 清除错误消息
     } catch (error) {
       console.error("Error during chat:", error);
       setErrorMessage("An error occurred while sending your message.");
+    } finally {
+      setIsChatLoading(false);
     }
   };
 
@@ -227,10 +240,21 @@ const PreferencePage = () => {
           <div className="text-red-500 text-sm mb-4">{errorMessage}</div>
         )}
         <button
-          className="w-full px-4 py-2 text-white bg-black rounded"
+          className="w-full px-4 py-2 text-white bg-black rounded disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           onClick={handleSubmitImage}
+          disabled={isImageLoading}
         >
-          Continue
+          {isImageLoading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Analyzing...
+            </>
+          ) : (
+            "Continue"
+          )}
         </button>
       </div>
     </div>
@@ -277,6 +301,20 @@ const PreferencePage = () => {
             )}
           </div>
         ))}
+        {isChatLoading && (
+          <div className="flex justify-start mb-4">
+            <div className="w-8 h-8 mr-2 bg-gray-300 rounded-full"></div>
+            <div className="px-4 py-2 bg-gray-200 text-black rounded-lg">
+              <div className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Thinking...
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   
       {/* input box and send button */}
@@ -287,17 +325,19 @@ const PreferencePage = () => {
             value={userMessage}
             onChange={(e) => setUserMessage(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey && !isChatLoading) {
                 e.preventDefault();
                 handleSendMessage();
               }
             }}
             placeholder="Let's talk about your ideal house!"
-            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            disabled={isChatLoading}
           />
           <button
             onClick={handleSendMessage}
-            className="ml-4 px-4 py-2 text-white bg-black rounded-lg hover:bg-gray-800"
+            disabled={isChatLoading}
+            className="ml-4 px-4 py-2 text-white bg-black rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             SEND
           </button>

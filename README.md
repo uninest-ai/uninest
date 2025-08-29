@@ -168,6 +168,7 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 
 # 2 
 docker-compose build
+docker-compose build --no-cache # clean rebuild
 
 # 3
 docker-compose up
@@ -205,9 +206,9 @@ sudo docker compose down && sudo docker compose up -d --build
 ```
 
 ### Bug list:
-1. `http://3.145.189.113/recommendation` This page didn't load Google Maps correctly. See the JavaScript console for technical details.
+1. [/] `http://3.145.189.113/recommendation` This page didn't load Google Maps correctly. See the JavaScript console for technical details.
 2. `http://3.145.189.113/preference` 
-  Overall: the AI call respond is slow
+  Overall: the AI call respond is slow, sue
   The Image part
   - doesn't have a loading icon when parsing the image
   The chat part
