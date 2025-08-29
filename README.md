@@ -202,3 +202,16 @@ curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-real-properties?prope
 ```
 sudo docker compose down && sudo docker compose up -d --build
 ```
+
+### Bug list:
+1. `http://3.145.189.113/recommendation` This page didn't load Google Maps correctly. See the JavaScript console for technical details.
+2. `http://3.145.189.113/preference` 
+  Overall: the AI call respond is slow
+  The Image part
+  - doesn't have a loading icon when parsing the image
+  The chat part
+  - doesn't have a initial message in the chat box "Let's talk about what kind of room you like!"
+  - final reply message not showing the preference collected "Sure, it sounds like having a separate and spacious study room is an important factor for you in your new home. Here's the preference you provided: ```json ```"
+3. `http://3.145.189.113/property-detail/46`:
+ - landlord information not showing
+4. Connect database to realworld data by 3rd party API

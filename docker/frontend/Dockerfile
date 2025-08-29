@@ -1,9 +1,35 @@
+# Build stage
+FROM node:18-alpine as build-stage
+
+WORKDIR /app
+
+# Accept build arguments
+ARG VITE_API_BASE_URL
+ARG VITE_GOOGLE_API_KEY
+
+# Set environment variables for build
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_GOOGLE_API_KEY=${VITE_GOOGLE_API_KEY}
+
+# Copy package files
+COPY frontend/housing-web/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY frontend/housing-web/ ./
+
+# Build the app
+RUN npm run build
+
+# Production stage
 FROM nginx:alpine
 
-# 复制已构建的文件
-COPY frontend/housing-web/dist /usr/share/nginx/html
+# Copy built files from build stage
+COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# 复制nginx配置
+# Copy nginx configuration
 COPY docker/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

@@ -25,13 +25,11 @@ services:
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+        - VITE_GOOGLE_API_KEY=${VITE_GOOGLE_API_KEY}
     ports:
       - "80:80" # 通常前端通过 Nginx 运行在 80 端口
-    environment:
-      # 如果前端构建时需要知道 API 地址
-      # 这些变量需要通过 ARG 传递到前端的 Dockerfile 内部，并在构建时使用
-      # 或者，如果前端是运行时配置，则这样注入即可
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL} # 示例
     depends_on:
       - backend
     restart: unless-stopped
