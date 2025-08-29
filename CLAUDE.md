@@ -195,6 +195,6 @@ Roommate scoring algorithm:
 
 Reset database and fetch sample properties:
 ```bash
-curl -X POST "http://3.14.150.166:8000/api/v1/admin/fetch-real-properties?property_count=5" \
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-real-properties?property_count=5" \
   -H "X-Admin-Key: Admin123456"
 ```

@@ -370,7 +370,7 @@ async def list_real_landlords(
     列出所有通过API自动创建的真实房东
     
     使用方法:
-    curl -X GET "http://3.14.150.166:8000/api/v1/admin/real-landlords" \
+    curl -X GET "http://3.145.189.113:8000/api/v1/admin/real-landlords" \
       -H "X-Admin-Key: Admin123456"
     """
     

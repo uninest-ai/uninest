@@ -150,11 +150,18 @@ For questions, bug reports, or feature requests:
 - **Yiqi Cheng** (yiqic2@andrew.cmu.edu) - DevOps & Cloud Infrastructure
 
 **Project Links**:
-- 🌐 **Live Demo**: [UniNest Application](http://3.14.150.166)
+- 🌐 **Live Demo**: [UniNest Application](http://3.145.189.113)
 
 
 ---
 ## Personal notes:
+```
+# Connect ubuntu
+ssh -i "D:\ahYen Workspace\ahYen Work\CMU_academic\MSCD_Y1_2425\17637-WebApps\uninest_mykey_new.pem" ec2-user@3.145.189.113
+
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+```
+
 ```
 # 1 wsl & login
 
@@ -183,12 +190,12 @@ docker-compose logs
 ### Commands:
 1. reset db
 ```
-curl -X POST "http://3.14.150.166:8000/api/v1/admin/fetch-real-properties?property_count=5"   
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-real-properties?property_count=5"   
   -H "X-Admin-Key: MY-ADMIN-KEY"
 ```
 2. fetch
 ```
-curl -X POST "http://3.14.150.166:8000/api/v1/admin/fetch-real-properties?property_count=5" \
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-real-properties?property_count=5" \
   -H "X-Admin-Key: Admin123456"
 ```
 3. Rebuild
