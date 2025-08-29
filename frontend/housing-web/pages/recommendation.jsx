@@ -33,6 +33,8 @@ const RecommendationPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userType, setUserType] = useState(null);
+  const [propertyLimit, setPropertyLimit] = useState(10);
+  const [roommateLimit, setRoommateLimit] = useState(10);
 
   const libraries = useMemo(() => ["places", "marker"], []);
 
@@ -58,13 +60,13 @@ const RecommendationPage = () => {
       return;
     }
 
-    const fetchRecommendations = async () => {
+    const fetchRecommendations = async (propLimit = propertyLimit, roomLimit = roommateLimit) => {
       try {
         setLoading(true);
-        const propertyData = await getPropertyRecommendations(10);
+        const propertyData = await getPropertyRecommendations(propLimit);
         setProperties(propertyData);
 
-        const roommateData = await getRoommateRecommendations(10);
+        const roommateData = await getRoommateRecommendations(roomLimit);
         setRoommates(roommateData);
       } catch (error) {
         if (
@@ -83,6 +85,28 @@ const RecommendationPage = () => {
 
     fetchRecommendations();
   }, [navigate]);
+
+  // Separate useEffect for when limits change
+  useEffect(() => {
+    if (userType === "tenant") {
+      const fetchRecommendations = async () => {
+        try {
+          setLoading(true);
+          const propertyData = await getPropertyRecommendations(propertyLimit);
+          setProperties(propertyData);
+
+          const roommateData = await getRoommateRecommendations(roommateLimit);
+          setRoommates(roommateData);
+        } catch (error) {
+          console.error("Error fetching recommendations:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchRecommendations();
+    }
+  }, [propertyLimit, roommateLimit, userType]);
 
   const handleActiveMarker = (markerId) => {
     // setActiveMarker(markerId === activeMarker ? null : markerId);
@@ -240,8 +264,28 @@ const RecommendationPage = () => {
 
         {/* 右侧房产列表 */}
         <div className="w-[400px] bg-white border-l flex flex-col overflow-y-auto">
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold">Recommended Properties</h2>
+          <div className="p-4 border-b space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Recommended Properties</h2>
+              <span className="text-sm text-gray-500">({properties.length} shown)</span>
+            </div>
+            
+            {/* Property Count Control */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">Show:</label>
+              <select
+                value={propertyLimit}
+                onChange={(e) => setPropertyLimit(parseInt(e.target.value))}
+                className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={5}>5 properties</option>
+                <option value={10}>10 properties</option>
+                <option value={15}>15 properties</option>
+                <option value={20}>20 properties</option>
+                <option value={30}>30 properties</option>
+                <option value={50}>50 properties</option>
+              </select>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
@@ -288,9 +332,26 @@ const RecommendationPage = () => {
 
       {/* 底部推荐室友头像 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50">
-        <h2 className="text-lg font-semibold mb-2 text-center">
-          They are also looking for houses...
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold">
+            They are also looking for houses... ({roommates.length} shown)
+          </h2>
+          
+          {/* Roommate Count Control */}
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700">Show:</label>
+            <select
+              value={roommateLimit}
+              onChange={(e) => setRoommateLimit(parseInt(e.target.value))}
+              className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5 roommates</option>
+              <option value={10}>10 roommates</option>
+              <option value={15}>15 roommates</option>
+              <option value={20}>20 roommates</option>
+            </select>
+          </div>
+        </div>
         <div className="flex space-x-4 overflow-x-auto">
           {roommates.map((roommate) => (
             <div key={roommate.id} className="flex-shrink-0">

@@ -13,7 +13,7 @@ router = APIRouter()  # This line was missing
 
 @router.get("/properties", response_model=List[schemas.PropertyRecommendation])
 def get_property_recommendations(
-    limit: int = Query(10, ge=1, le=50),
+    limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -36,8 +36,8 @@ def get_property_recommendations(
     
     # Update recommendation relationships
     if property_recommendations:
-        # Get top 10 recommended properties
-        top_properties = [rec[0] for rec in property_recommendations[:10]]
+        # Get top recommended properties up to the limit
+        top_properties = [rec[0] for rec in property_recommendations[:limit]]
         
         # Clear existing recommendations
         tenant_profile.recommended_properties = []
@@ -70,7 +70,7 @@ def get_property_recommendations(
 
 @router.get("/roommates", response_model=List[schemas.RoommateRecommendation])
 def get_roommate_recommendations(
-    limit: int = Query(10, ge=1, le=50),
+    limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -93,8 +93,8 @@ def get_roommate_recommendations(
     
     # Update recommendation relationships
     if roommate_recommendations:
-        # Get top 10 recommended roommates
-        top_roommates = [rec[0] for rec in roommate_recommendations[:10]]
+        # Get top recommended roommates up to the limit
+        top_roommates = [rec[0] for rec in roommate_recommendations[:limit]]
         
         # Clear existing recommendations
         tenant_profile.recommended_roommates = []
