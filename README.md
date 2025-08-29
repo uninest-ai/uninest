@@ -157,12 +157,13 @@ For questions, bug reports, or feature requests:
 ## Personal notes:
 ```
 # Connect ubuntu
-ssh -i "D:\ahYen Workspace\ahYen Work\CMU_academic\MSCD_Y1_2425\17637-WebApps\uninest_mykey_new.pem" ec2-user@3.145.189.113
+ssh -v -i "D:\ahYen Workspace\ahYen Work\CMU_academic\MSCD_Y1_2425\17637-WebApps\uninest_mykey_new.pem" ec2-user@3.145.189.113
 
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 ```
 
 ```
+# Run in ubuntu:
 # 1 wsl & login
 
 # 2 

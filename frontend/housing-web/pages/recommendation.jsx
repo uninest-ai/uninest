@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   GoogleMap,
@@ -34,7 +34,7 @@ const RecommendationPage = () => {
   const [error, setError] = useState(null);
   const [userType, setUserType] = useState(null);
 
-  const libraries = useMemo(() => ["places"], []);
+  const libraries = useMemo(() => ["places", "marker"], []);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_API_KEY || "your-fallback-key",
