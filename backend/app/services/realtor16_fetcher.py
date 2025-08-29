@@ -228,21 +228,9 @@ class Realtor16Fetcher:
         # 基本描述
         description_parts.append("🏠 **Real Estate Listing from Realtor16 API**")
         
-        # 房源基本信息
-        basic_info = []
-        if description_data.get('sqft'):
-            basic_info.append(f"📐 Size: {description_data['sqft']} sqft")
-        if description_data.get('year_built'):
-            basic_info.append(f"🏗️ Built: {description_data['year_built']}")
-        if description_data.get('garage'):
-            basic_info.append(f"🚗 Garage: {description_data['garage']} spaces")
-        
-        if basic_info:
-            description_parts.append(" | ".join(basic_info))
-        
         # 位置信息
         if address_data.get('neighborhood'):
-            description_parts.append(f"📍 Neighborhood: {address_data['neighborhood']}")
+            description_parts.append(f"Neighborhood: {address_data['neighborhood']}")
         
         # 原始链接部分
         description_parts.append("\n🔗 **View Original Listing:**")

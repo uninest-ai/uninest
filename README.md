@@ -1,18 +1,48 @@
-# UniNest
-Team: Chia Hui Yen, Mathilda, Yiqi
+# UniNest - Student Housing 🏠
+**Team**: Chia Hui Yen (huiyenc), Mathilda Chen (liyingch), Yiqi Cheng (yiqic2)
 
-**Project Highlight**: 
-
-
+**Project Highlight**: A personalized housing recommendation system near CMU that leverages AI-powered image analysis, natural language processing, and advanced matching algorithms to connect students with their ideal homes and compatible roommates.
 
 ## 🏗️ Project Overview
 
+UniNest is a comprehensive platform designed specifically for the CMU student community, offering intelligent property and roommate recommendations through multiple interaction modalities including chat-based preference extraction, image analysis, and traditional filtering.
 
-## Recommendation logic:
+### 🌟 Key Features
+
+- **🤖 AI-Powered Chat Assistant**: Natural language preference extraction for housing requirements
+- **📸 Image Analysis**: Upload ideal home images to automatically extract housing preferences  
+- **🏘️ Smart Property Recommendations**: Advanced matching algorithms considering budget, location, and lifestyle preferences
+- **👥 Roommate Matching**: Compatibility scoring based on lifestyle preferences and housing requirements
+- **💬 In-App Messaging**: Direct communication between tenants, landlords, and potential roommates
+- **📱 Responsive Design**: Seamless experience across desktop and mobile devices
+
+## 🔧 Tech Stack
+
+**Backend**:
+- FastAPI (Python web framework)
+- PostgreSQL (Database)
+- SQLAlchemy (ORM)
+- JWT Authentication
+- OpenAI GPT-4 (Chat & Image Analysis)
+- AWS S3 (Image Storage)
+
+**Frontend**:
+- React with TypeScript
+- Next.js
+- Tailwind CSS
+- Axios (API communication)
+
+**Infrastructure**:
+- AWS EC2 (Backend hosting)
+- AWS RDS (Database)
+- Docker (Containerization)
+
+## 🎯 Recommendation Logic
+
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │   User Input    │────►│  Auth Service   │────►│  User Profile   │
-│   & Request     │     │  Verification   │     │  Retrieval      │
+│ (Chat/Image/UI) │     │  Verification   │     │  Retrieval      │
 └─────────────────┘     └─────────────────┘     └────────┬────────┘
                                                          │
                                                          ▼
@@ -42,6 +72,86 @@ Team: Chia Hui Yen, Mathilda, Yiqi
 │                 │     │                 │     │                 │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Docker and Docker Compose
+- Node.js 18+ (for local frontend development)
+- Python 3.9+ (for local backend development)
+
+## 🎨 User Interface Screenshots
+
+### Homepage & Navigation
+![Homepage Screenshot](screenshots/homepage.png)
+*Clean, intuitive homepage with easy navigation for students*
+
+### AI-Powered Property Recommendations
+![Property Recommendations](screenshots/recommendations.png)
+*Personalized property recommendations with match scores and detailed information*
+
+### Chat Assistant for Preference Extraction
+![Chat Assistant](screenshots/chat.png)
+*Natural language chat interface that learns your housing preferences*
+
+### Image Analysis Feature
+![Image Analysis](screenshots/image-analysis.png)
+*Upload photos of your dream home and let AI extract your preferences*
+
+### Roommate Matching
+![Roommate Matching](screenshots/roommate-matching.png)
+*Find compatible roommates based on lifestyle and housing preferences*
+
+### Property Details & Messaging
+![Property Details](screenshots/property-details.png)
+*Detailed property information with direct messaging to landlords*
+
+## 🧠 AI Features Deep Dive
+### Chat-Based Preference Extraction
+The AI chat assistant uses OpenAI's GPT-4 to understand natural language descriptions of housing preferences and automatically categorizes them into:
+- **Property preferences**: Type, bedrooms, bathrooms, amenities
+- **Location preferences**: Neighborhood, distance to campus, transportation
+- **Lifestyle preferences**: Noise level, roommate preferences, study space needs
+
+### Image Analysis
+Using OpenAI's Vision API, the system can analyze uploaded images to extract:
+- **Architectural style**: Modern, traditional, industrial, etc.
+- **Space characteristics**: Open concept, cozy, minimalist
+- **Key features**: Hardwood floors, large windows, outdoor space
+- **Mood and ambiance**: Bright, warm, sophisticated
+
+## 🔮 Future Enhancements
+
+### Short-term Goals
+- [ ] Real-time chat with WebSocket support
+- [ ] Advanced map integration with property clusters
+- [ ] Push notifications for new matches
+- [ ] Enhanced mobile responsiveness
+
+### Medium-term Goals
+- [ ] Mobile app development (React Native)
+- [ ] Machine learning model improvements
+- [ ] Social features and user reviews
+- [ ] Integration with external property APIs (Zillow, Apartments.com)
+
+### Long-term Vision
+- [ ] Virtual property tours using VR/AR
+- [ ] Blockchain-based rental agreements
+- [ ] IoT integration for smart property management
+- [ ] Expansion to other university communities
+
+## 🙋‍♂️ Support & Contact
+
+For questions, bug reports, or feature requests:
+
+**Development Team**:
+- **Chia Hui Yen** (huiyenc@andrew.cmu.edu) - Backend & AI Integration
+- **Mathilda Chen** (liyingch@andrew.cmu.edu) - Frontend & Product Owner
+- **Yiqi Cheng** (yiqic2@andrew.cmu.edu) - DevOps & Cloud Infrastructure
+
+**Project Links**:
+- 🌐 **Live Demo**: [UniNest Application](http://3.14.150.166)
+
 
 ---
 ## Personal notes:
@@ -80,4 +190,8 @@ curl -X POST "http://3.14.150.166:8000/api/v1/admin/fetch-real-properties?proper
 ```
 curl -X POST "http://3.14.150.166:8000/api/v1/admin/fetch-real-properties?property_count=5" \
   -H "X-Admin-Key: Admin123456"
+```
+3. Rebuild
+```
+sudo docker compose down && sudo docker compose up -d --build
 ```
