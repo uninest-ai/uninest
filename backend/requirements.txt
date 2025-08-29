@@ -90,3 +90,9 @@ structlog==23.1.0
 # Additional dependencies
 accelerate>=0.20.0
 
+# Task Scheduling
+schedule==1.2.0
+
+# HTTP Requests
+requests==2.31.0
+

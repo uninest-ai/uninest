@@ -3,12 +3,15 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from pydantic import BaseModel
 import os
+from datetime import datetime
 from sqlalchemy import text 
 
 from app.database import get_db
 from app.models import LandlordProfile, User, Property  
 from app.services.rapidapi_fetcher import RapidAPIFetcher
 from app.services.realtor16_fetcher import Realtor16Fetcher
+from app.services.multi_source_fetcher import MultiSourceFetcher
+from app.services.sync_scheduler import get_scheduler_status, manual_sync, start_property_sync, stop_property_sync
 
 router = APIRouter()
 
@@ -401,6 +404,145 @@ async def list_real_landlords(
     }
     
 
+@router.post("/admin/fetch-multi-source-properties")
+async def admin_fetch_multi_source_properties(
+    property_count: int = 30,
+    admin_verified: bool = Depends(verify_admin_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Fetch comprehensive property data from multiple real estate APIs
+    
+    This endpoint combines data from:
+    - Realtor16 API (primary source)
+    - Realty Mole API (secondary source) 
+    - Custom Pittsburgh neighborhood data (tertiary source)
+    
+    Usage:
+    curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-multi-source-properties?property_count=50" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    api_key = os.getenv("RAPIDAPI_KEY")
+    if not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="RapidAPI key not configured"
+        )
+    
+    if property_count > 100:
+        property_count = 100
+    
+    try:
+        fetcher = MultiSourceFetcher(api_key)
+        result = fetcher.get_comprehensive_property_data(db=db, limit=property_count)
+        
+        if result['success']:
+            return {
+                "success": True,
+                "total_fetched": result.get('total_fetched', 0),
+                "saved_count": result.get('saved_count', 0),
+                "created_landlords": result.get('created_landlords', 0),
+                "api_sources_used": result.get('api_sources_used', []),
+                "properties_preview": result.get('properties', [])[:5],
+                "errors": result.get('errors', []),
+                "message": f"Successfully fetched {result.get('saved_count', 0)} properties from {len(result.get('api_sources_used', []))} different sources"
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to fetch properties: {result.get('errors', ['Unknown error'])}"
+            )
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error during multi-source fetch: {str(e)}"
+        )
+
+@router.get("/admin/property-sources")
+async def get_property_sources_stats(
+    admin_verified: bool = Depends(verify_admin_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Get statistics about property sources and data quality
+    
+    Usage:
+    curl -X GET "http://3.145.189.113:8000/api/v1/admin/property-sources" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    try:
+        # Count properties by source (based on description patterns)
+        all_properties = db.query(Property).filter(Property.is_active == True).all()
+        
+        source_stats = {
+            'realtor16': 0,
+            'realty_mole': 0,
+            'custom_pittsburgh': 0,
+            'other': 0
+        }
+        
+        neighborhood_stats = {}
+        price_ranges = {'under_1000': 0, '1000_1500': 0, '1500_2000': 0, 'over_2000': 0}
+        property_types = {}
+        
+        for prop in all_properties:
+            # Categorize by source
+            desc = prop.description.lower() if prop.description else ''
+            if 'realtor16' in desc or 'realtor.com' in desc:
+                source_stats['realtor16'] += 1
+            elif 'realty mole' in desc or 'realty-mole' in desc:
+                source_stats['realty_mole'] += 1
+            elif 'pittsburgh' in desc and ('neighborhood' in desc or 'property management' in desc):
+                source_stats['custom_pittsburgh'] += 1
+            else:
+                source_stats['other'] += 1
+            
+            # Neighborhood stats
+            if prop.address:
+                for neighborhood in ['Oakland', 'Shadyside', 'Squirrel Hill', 'Greenfield', 
+                                   'Point Breeze', 'Regent Square', 'Bloomfield', 'Friendship']:
+                    if neighborhood in prop.address:
+                        neighborhood_stats[neighborhood] = neighborhood_stats.get(neighborhood, 0) + 1
+                        break
+            
+            # Price ranges
+            if prop.price < 1000:
+                price_ranges['under_1000'] += 1
+            elif prop.price < 1500:
+                price_ranges['1000_1500'] += 1
+            elif prop.price < 2000:
+                price_ranges['1500_2000'] += 1
+            else:
+                price_ranges['over_2000'] += 1
+                
+            # Property types
+            prop_type = prop.property_type or 'unknown'
+            property_types[prop_type] = property_types.get(prop_type, 0) + 1
+        
+        return {
+            "total_active_properties": len(all_properties),
+            "source_breakdown": source_stats,
+            "neighborhood_distribution": neighborhood_stats,
+            "price_range_distribution": price_ranges,
+            "property_type_distribution": property_types,
+            "data_quality_metrics": {
+                "properties_with_coordinates": len([p for p in all_properties if p.latitude and p.longitude]),
+                "properties_with_photos": len([p for p in all_properties if p.image_url]),
+                "average_price": sum(p.price for p in all_properties) / len(all_properties) if all_properties else 0,
+                "properties_updated_today": len([p for p in all_properties if p.updated_at and 
+                                               p.updated_at.date() == datetime.now().date()])
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting property statistics: {str(e)}"
+        )
+
 @router.delete("/admin/reset-database")
 async def reset_database(
     confirm: str = "RESET_ALL_DATA",
@@ -455,4 +597,111 @@ async def reset_database(
         raise HTTPException(
             status_code=500,
             detail=f"Error resetting database: {str(e)}"
+        )
+
+@router.get("/admin/sync/status")
+async def get_sync_scheduler_status(
+    admin_verified: bool = Depends(verify_admin_key)
+):
+    """
+    Get the status of the automatic property synchronization scheduler
+    
+    Usage:
+    curl -X GET "http://3.145.189.113:8000/api/v1/admin/sync/status" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    try:
+        status = get_scheduler_status()
+        return {
+            "scheduler_status": status,
+            "api_configured": bool(os.getenv("RAPIDAPI_KEY")),
+            "last_check": datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting scheduler status: {str(e)}"
+        )
+
+@router.post("/admin/sync/start")
+async def start_sync_scheduler(
+    admin_verified: bool = Depends(verify_admin_key)
+):
+    """
+    Start the automatic property synchronization scheduler
+    
+    Usage:
+    curl -X POST "http://3.145.189.113:8000/api/v1/admin/sync/start" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    try:
+        start_property_sync()
+        return {
+            "success": True,
+            "message": "Property sync scheduler started",
+            "status": get_scheduler_status()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error starting scheduler: {str(e)}"
+        )
+
+@router.post("/admin/sync/stop")
+async def stop_sync_scheduler(
+    admin_verified: bool = Depends(verify_admin_key)
+):
+    """
+    Stop the automatic property synchronization scheduler
+    
+    Usage:
+    curl -X POST "http://3.145.189.113:8000/api/v1/admin/sync/stop" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    try:
+        stop_property_sync()
+        return {
+            "success": True,
+            "message": "Property sync scheduler stopped"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error stopping scheduler: {str(e)}"
+        )
+
+@router.post("/admin/sync/manual")
+async def trigger_manual_sync(
+    sync_type: str = "incremental",  # incremental, comprehensive, cleanup
+    admin_verified: bool = Depends(verify_admin_key)
+):
+    """
+    Manually trigger a property synchronization
+    
+    Types:
+    - incremental: Quick sync with latest properties
+    - comprehensive: Full sync from all sources  
+    - cleanup: Remove old inactive properties
+    
+    Usage:
+    curl -X POST "http://3.145.189.113:8000/api/v1/admin/sync/manual?sync_type=comprehensive" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    if sync_type not in ['incremental', 'comprehensive', 'cleanup']:
+        raise HTTPException(
+            status_code=400,
+            detail="sync_type must be one of: incremental, comprehensive, cleanup"
+        )
+    
+    try:
+        result = manual_sync(sync_type)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error during manual sync: {str(e)}"
         )
