@@ -532,8 +532,8 @@ async def get_property_sources_stats(
                 "properties_with_coordinates": len([p for p in all_properties if p.latitude and p.longitude]),
                 "properties_with_photos": len([p for p in all_properties if p.image_url]),
                 "average_price": sum(p.price for p in all_properties) / len(all_properties) if all_properties else 0,
-                "properties_updated_today": len([p for p in all_properties if p.updated_at and 
-                                               p.updated_at.date() == datetime.now().date()])
+                "properties_created_today": len([p for p in all_properties if p.created_at and 
+                                               p.created_at.date() == datetime.now().date()])
             }
         }
         
@@ -704,4 +704,163 @@ async def trigger_manual_sync(
         raise HTTPException(
             status_code=500,
             detail=f"Error during manual sync: {str(e)}"
+        )
+
+@router.get("/admin/property-links")
+async def get_property_links_report(
+    admin_verified: bool = Depends(verify_admin_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed report of property links and data sources
+    
+    Usage:
+    curl -X GET "http://3.145.189.113:8000/api/v1/admin/property-links" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    try:
+        # Get all active properties with their landlords
+        properties_with_landlords = db.query(Property).join(LandlordProfile).filter(
+            Property.is_active == True
+        ).all()
+        
+        link_report = {
+            "total_properties": len(properties_with_landlords),
+            "properties_with_links": [],
+            "landlord_link_summary": {},
+            "link_statistics": {
+                "realtor_com_links": 0,
+                "zillow_links": 0,
+                "apartments_com_links": 0,
+                "mls_ids": 0,
+                "office_websites": 0
+            }
+        }
+        
+        for prop in properties_with_landlords:
+            property_info = {
+                "property_id": prop.id,
+                "title": prop.title,
+                "price": prop.price,
+                "address": prop.address,
+                "landlord_company": prop.landlord.company_name if prop.landlord else "N/A",
+                "links_found": []
+            }
+            
+            # Check property description for links
+            if prop.description:
+                desc = prop.description.lower()
+                
+                # Count different types of links
+                if 'realtor.com' in desc or 'realtor16' in desc:
+                    property_info["links_found"].append("Realtor.com")
+                    link_report["link_statistics"]["realtor_com_links"] += 1
+                
+                if 'zillow.com' in desc:
+                    property_info["links_found"].append("Zillow")
+                    link_report["link_statistics"]["zillow_links"] += 1
+                    
+                if 'apartments.com' in desc:
+                    property_info["links_found"].append("Apartments.com") 
+                    link_report["link_statistics"]["apartments_com_links"] += 1
+                    
+                if 'mls id:' in desc:
+                    property_info["links_found"].append("MLS ID")
+                    link_report["link_statistics"]["mls_ids"] += 1
+            
+            # Check landlord description for office websites
+            if prop.landlord and prop.landlord.description:
+                landlord_desc = prop.landlord.description.lower()
+                if 'website:' in landlord_desc or 'http' in landlord_desc:
+                    property_info["links_found"].append("Landlord Website")
+                    link_report["link_statistics"]["office_websites"] += 1
+                    
+                    # Add to landlord summary
+                    company = prop.landlord.company_name
+                    if company not in link_report["landlord_link_summary"]:
+                        link_report["landlord_link_summary"][company] = {
+                            "description": prop.landlord.description,
+                            "contact_phone": prop.landlord.contact_phone,
+                            "property_count": 0
+                        }
+                    link_report["landlord_link_summary"][company]["property_count"] += 1
+            
+            # Only include properties with links
+            if property_info["links_found"]:
+                link_report["properties_with_links"].append(property_info)
+        
+        # Calculate percentages
+        total = len(properties_with_landlords)
+        link_report["coverage_stats"] = {
+            "properties_with_any_links": len(link_report["properties_with_links"]),
+            "coverage_percentage": round((len(link_report["properties_with_links"]) / total * 100), 2) if total > 0 else 0,
+            "realtor_coverage": round((link_report["link_statistics"]["realtor_com_links"] / total * 100), 2) if total > 0 else 0
+        }
+        
+        return link_report
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating links report: {str(e)}"
+        )
+
+@router.get("/admin/property-details/{property_id}")
+async def get_property_details(
+    property_id: int,
+    admin_verified: bool = Depends(verify_admin_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed information for a specific property including all links
+    
+    Usage:
+    curl -X GET "http://3.145.189.113:8000/api/v1/admin/property-details/123" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    try:
+        property_details = db.query(Property).filter(Property.id == property_id).first()
+        
+        if not property_details:
+            raise HTTPException(status_code=404, detail="Property not found")
+        
+        # Get landlord details
+        landlord = db.query(LandlordProfile).filter(
+            LandlordProfile.id == property_details.landlord_id
+        ).first()
+        
+        return {
+            "property": {
+                "id": property_details.id,
+                "title": property_details.title,
+                "price": property_details.price,
+                "description": property_details.description,
+                "address": property_details.address,
+                "property_type": property_details.property_type,
+                "bedrooms": property_details.bedrooms,
+                "bathrooms": property_details.bathrooms,
+                "area": property_details.area,
+                "latitude": property_details.latitude,
+                "longitude": property_details.longitude,
+                "created_at": property_details.created_at.isoformat() if property_details.created_at else None,
+                "is_active": property_details.is_active
+            },
+            "landlord": {
+                "id": landlord.id if landlord else None,
+                "company_name": landlord.company_name if landlord else None,
+                "contact_phone": landlord.contact_phone if landlord else None,
+                "description": landlord.description if landlord else None,
+                "verification_status": landlord.verification_status if landlord else None,
+                "created_at": landlord.created_at.isoformat() if landlord and landlord.created_at else None
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting property details: {str(e)}"
         )
