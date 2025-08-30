@@ -49,7 +49,7 @@ const RecommendationPage = () => {
     }
     
     // Default fallback
-    return "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/450px-No_image_available.svg.png?20250720084638";
+    return "https://media.istockphoto.com/id/1954514832/vector/home-icon-house-vector-icon-homepage-for-website-or-real-estate-symbol.jpg?s=612x612&w=0&k=20&c=7HoRqnH_CTJ6if9eJsB7u13FtNUzSvrAyQGO6gCLYJs=";
   };
 
   const libraries = useMemo(() => ["places", "marker"], []);

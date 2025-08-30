@@ -55,6 +55,7 @@ def get_property_recommendations(
             "price": p[0].price,
             "description": p[0].description,
             "image_url": p[0].image_url,
+            "api_images": p[0].api_images,  # Include api_images for fallback
             "property_type": p[0].property_type,
             "bedrooms": p[0].bedrooms,
             "bathrooms": p[0].bathrooms,

@@ -217,6 +217,7 @@ class PropertyRecommendation(BaseModel):
     price: float
     description: Optional[str] = None
     image_url: Optional[str] = None
+    api_images: Optional[List[str]] = None  # Include api_images for fallback
     property_type: Optional[str] = None
     bedrooms: Optional[int] = None
     bathrooms: Optional[float] = None
