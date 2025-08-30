@@ -1,23 +1,23 @@
 # Core Web Framework
 fastapi==0.109.0
-uvicorn==0.27.0.post1
+uvicorn==0.27.0.post1  # Used via command line
 
 # Database
 sqlalchemy==2.0.25
 alembic==1.13.1
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.9  # Used implicitly by SQLAlchemy
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.9
-PyJWT==2.8.0
+python-multipart==0.0.9  # Used implicitly by FastAPI
+# PyJWT==2.8.0  # UNUSED - Functionality covered by python-jose
 
 # Environment & Configuration
 python-dotenv==1.0.0
 pydantic==2.6.1
 pydantic-settings==2.1.0
-email-validator==2.1.1
+email-validator==2.1.1  # Used implicitly by Pydantic EmailStr
 
 # AWS Integration
 boto3==1.34.28
@@ -27,72 +27,40 @@ numpy==1.26.4
 pandas==2.0.3
 scikit-learn==1.3.2
 
-# Image Processing
-Pillow==10.2.0
+# Image Processing - MISSING PACKAGES NEEDED
+# Pillow==10.2.0  # UNUSED - No PIL/Image imports found
+opencv-python==4.8.0.74  # MISSING - cv2 used in floor_plan_analyzer.py
+scipy==1.11.0  # MISSING - Used in floor_plan_analyzer.py
 
 # API & Documentation
-httpx==0.27.0
-structlog==23.1.0
+# httpx==0.27.0  # UNUSED - No imports found
+# structlog==23.1.0  # UNUSED - No imports found
 
 # OpenAI Integration
 openai==1.12.0
 
-# Type Validation
-pydantic==2.6.1
-pydantic-settings==2.1.0
-email-validator==2.1.1
-
 # Web Server
-gunicorn==21.2.0
+gunicorn==21.2.0  # Used via command line
 
-# CORS Handling
-python-jose==3.3.0
+# CORS Handling - FastAPI has built-in CORS
+# Flask-Cors==4.0.0  # UNUSED - FastAPI uses CORSMiddleware
 
 # Additional Utilities
-asyncio==3.4.3
-
-# Cors 
-Flask-Cors==4.0.0
-
-# Machine Learning & Data Processing
-scikit-learn==1.3.2
-numpy==1.26.4
-pandas==2.0.3
-
-# Web Server
-uvicorn==0.27.0.post1
-gunicorn==21.2.0
-
-# CORS Handling
-python-jose==3.3.0
-
-# Additional Utilities
-asyncio==3.4.3
-
-# Image Processing
-Pillow==10.2.0
-
-# API Documentation
-httpx==0.27.0
-
-# Cors 
-Flask-Cors==4.0.0
-
-structlog==23.1.0
-
-# Update the PyTorch version to 2.0.0 or higher
-# torch>=2.0.0
-# torchvision>=0.15.0
-
-# Specify a compatible transformers version
-# transformers==4.30.0  # This version should be compatible with your PyTorch
-
-# Additional dependencies
-accelerate>=0.20.0
+# asyncio==3.4.3  # UNUSED - Built into Python 3.7+
 
 # Task Scheduling
 schedule==1.2.0
 
 # HTTP Requests
 requests==2.31.0
+
+# Machine Learning
+# accelerate>=0.20.0  # UNUSED - No imports found
+
+# Update the PyTorch version to 2.0.0 or higher
+# torch>=2.0.0  # COMMENTED OUT - Not currently used
+# torchvision>=0.15.0  # COMMENTED OUT - Not currently used
+
+# Specify a compatible transformers version
+# transformers==4.30.0  # COMMENTED OUT - Not currently used
 

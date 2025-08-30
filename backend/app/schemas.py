@@ -83,6 +83,14 @@ class PropertyBase(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     labels: Optional[List[Dict[str, Any]]] = None  # Flexible JSON-like structure
+    # New 3rd party API fields
+    original_listing_url: Optional[str] = None
+    api_source: Optional[str] = None
+    api_property_id: Optional[str] = None
+    api_images: Optional[List[str]] = None
+    extended_description: Optional[str] = None
+    api_amenities: Optional[List[str]] = None
+    api_metadata: Optional[Dict[str, Any]] = None
 
 class PropertyCreate(PropertyBase):
     pass
@@ -100,12 +108,28 @@ class PropertyImageResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# Landlord info for property responses
+class LandlordInfo(BaseModel):
+    id: int
+    company_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    description: Optional[str] = None
+    verification_status: bool = False
+    profile_image_url: Optional[str] = None
+    website_url: Optional[str] = None
+    email: Optional[str] = None
+    office_address: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
 class PropertyResponse(PropertyBase):
     id: int
     landlord_id: int 
     created_at: datetime
     is_active: bool
     images: List[PropertyImageResponse] = []
+    landlord: Optional[LandlordInfo] = None  # Include landlord information
     
     class Config:
         from_attributes = True
@@ -138,6 +162,13 @@ class LandlordProfileBase(BaseModel):
     contact_phone: Optional[str] = None
     description: Optional[str] = None
     verification_status: Optional[bool] = False
+    # New 3rd party API fields
+    profile_image_url: Optional[str] = None
+    website_url: Optional[str] = None
+    email: Optional[str] = None
+    office_address: Optional[str] = None
+    api_source: Optional[str] = None
+    api_metadata: Optional[Dict[str, Any]] = None
 
 class LandlordProfileCreate(LandlordProfileBase):
     pass

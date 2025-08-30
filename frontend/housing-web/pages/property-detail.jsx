@@ -230,6 +230,30 @@ const PropertyDetail = () => {
               <p className="mt-2 text-gray-800 whitespace-pre-line">
                 {property.description}
               </p>
+
+              {/* API Amenities */}
+              {property.api_amenities && property.api_amenities.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-md font-medium text-black mb-2">Amenities</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {property.api_amenities.map((amenity, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                      >
+                        {amenity}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* API Source */}
+              {property.api_source && (
+                <div className="mt-4 text-sm text-gray-500">
+                  <p>Data source: {property.api_source}</p>
+                </div>
+              )}
             </div>
 
             {/* 其他特性 */}
@@ -278,72 +302,150 @@ const PropertyDetail = () => {
             <div className="mt-8 border-t pt-6">
               <h2 className="text-lg font-semibold text-black mb-4">Landlord Information</h2>
               <div className="bg-gray-50 rounded-lg p-6">
-                {/* Landlord Name */}
-                {property.landlord_name && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-500">Landlord</h3>
-                    <p className="mt-1 text-black flex items-center">
-                      {property.landlord_name}
-                      {property.landlord_verification && (
-                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                          <svg className="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
-                            <circle cx="4" cy="4" r="3" />
-                          </svg>
-                          Verified
-                        </span>
+                {property.landlord ? (
+                  <>
+                    {/* Landlord Profile Image */}
+                    {property.landlord.profile_image_url && (
+                      <div className="mb-4 flex justify-center">
+                        <img
+                          src={property.landlord.profile_image_url}
+                          alt="Landlord Profile"
+                          className="h-20 w-20 rounded-full object-cover border-2 border-gray-300"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Company Name */}
+                    {property.landlord.company_name && (
+                      <div className="mb-4">
+                        <h3 className="text-sm font-medium text-gray-500">Company</h3>
+                        <p className="mt-1 text-black flex items-center">
+                          {property.landlord.company_name}
+                          {property.landlord.verification_status && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              <svg className="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                              </svg>
+                              Verified
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Contact Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {property.landlord.contact_phone && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Phone</h3>
+                          <p className="mt-1">
+                            <a 
+                              href={`tel:${property.landlord.contact_phone}`}
+                              className="text-blue-600 hover:text-blue-800 flex items-center"
+                            >
+                              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                              </svg>
+                              {property.landlord.contact_phone}
+                            </a>
+                          </p>
+                        </div>
                       )}
-                    </p>
-                  </div>
-                )}
 
-                {/* Company Name */}
-                {property.landlord_company && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-500">Company</h3>
-                    <p className="mt-1 text-black">{property.landlord_company}</p>
-                  </div>
-                )}
-                
-                {/* Contact Information */}
-                {property.landlord_contact && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-500">Contact</h3>
-                    <p className="mt-1 text-black">
-                      <a 
-                        href={`tel:${property.landlord_contact}`}
-                        className="text-blue-600 hover:text-blue-800 flex items-center"
-                      >
-                        <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                        </svg>
-                        {property.landlord_contact}
-                      </a>
-                    </p>
-                  </div>
-                )}
-                
-                {/* Description/About */}
-                {property.landlord_description && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">About the Landlord</h3>
-                    <p className="mt-1 text-black whitespace-pre-line">
-                      {property.landlord_description}
-                    </p>
-                  </div>
-                )}
+                      {property.landlord.email && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                          <p className="mt-1">
+                            <a 
+                              href={`mailto:${property.landlord.email}`}
+                              className="text-blue-600 hover:text-blue-800 flex items-center"
+                            >
+                              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              {property.landlord.email}
+                            </a>
+                          </p>
+                        </div>
+                      )}
+                    </div>
 
-                {/* Contact Button */}
-                {/* <div className="mt-6">
-                  <button
-                    onClick={() => navigate(`/chat?landlord=${property.landlord_name}`)}
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                    Message Landlord
-                  </button>
-                </div> */}
+                    {/* Website Link */}
+                    {property.landlord.website_url && (
+                      <div className="mb-4">
+                        <h3 className="text-sm font-medium text-gray-500">Website</h3>
+                        <p className="mt-1">
+                          <a 
+                            href={property.landlord.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 flex items-center"
+                          >
+                            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Visit Website
+                          </a>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Office Address */}
+                    {property.landlord.office_address && (
+                      <div className="mb-4">
+                        <h3 className="text-sm font-medium text-gray-500">Office Address</h3>
+                        <p className="mt-1 text-black">{property.landlord.office_address}</p>
+                      </div>
+                    )}
+
+                    {/* Original Listing Link */}
+                    {property.original_listing_url && (
+                      <div className="mb-4">
+                        <h3 className="text-sm font-medium text-gray-500">Original Listing</h3>
+                        <p className="mt-1">
+                          <a 
+                            href={property.original_listing_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 flex items-center"
+                          >
+                            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            View Original Listing
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Extended Description from API */}
+                    {property.extended_description && property.extended_description !== property.description && (
+                      <div className="mb-4">
+                        <h3 className="text-sm font-medium text-gray-500">Additional Details</h3>
+                        <p className="mt-1 text-black whitespace-pre-line text-sm">
+                          {property.extended_description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Description/About */}
+                    {property.landlord.description && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">About the Landlord</h3>
+                        <p className="mt-1 text-black whitespace-pre-line">
+                          {property.landlord.description}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    <p>Landlord information not available</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

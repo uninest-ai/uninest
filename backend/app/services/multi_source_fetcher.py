@@ -265,6 +265,31 @@ class MultiSourceFetcher:
                 if existing:
                     continue
                 
+                # Extract images from API data
+                api_images = []
+                photos = prop.get('photos', [])
+                if photos:
+                    api_images = [photo.get('href') for photo in photos if photo.get('href')]
+                
+                # Extract original listing URL
+                listing_url = prop.get('permalink') or prop.get('href')
+                if not listing_url and prop.get('property_id'):
+                    listing_url = f"https://www.realtor.com/realestateandhomes-detail/{prop.get('property_id')}"
+                
+                # Create extended description with API data
+                extended_desc = f"Real estate listing from Realtor16 API\\n{full_address}\\nProperty ID: {prop.get('property_id', 'N/A')}"
+                if prop.get('description'):
+                    extended_desc += f"\\n\\nProperty Description:\\n{prop.get('description')}"
+                
+                # Extract amenities and features
+                amenities = []
+                if description_data.get('garage'):
+                    amenities.append(f"Garage: {description_data['garage']}")
+                if description_data.get('lot_sqft'):
+                    amenities.append(f"Lot Size: {description_data['lot_sqft']} sq ft")
+                if prop.get('virtual_tours'):
+                    amenities.append("Virtual Tour Available")
+                
                 # Create property
                 new_property = Property(
                     title=title,
@@ -279,7 +304,24 @@ class MultiSourceFetcher:
                     latitude=location.get('coordinate', {}).get('lat'),
                     longitude=location.get('coordinate', {}).get('lon'),
                     landlord_id=landlord.id,
-                    is_active=True
+                    is_active=True,
+                    # New 3rd party API fields
+                    original_listing_url=listing_url,
+                    api_source='realtor16',
+                    api_property_id=str(prop.get('property_id', '')),
+                    api_images=api_images,
+                    extended_description=extended_desc,
+                    api_amenities=amenities,
+                    api_metadata={
+                        'mls_id': prop.get('mls', {}).get('id'),
+                        'status': prop.get('status'),
+                        'listing_date': prop.get('list_date'),
+                        'price_per_sqft': prop.get('price_per_sqft'),
+                        'lot_size': description_data.get('lot_sqft'),
+                        'year_built': description_data.get('year_built'),
+                        'garage': description_data.get('garage'),
+                        'stories': description_data.get('stories')
+                    }
                 )
                 
                 db.add(new_property)
@@ -339,6 +381,25 @@ class MultiSourceFetcher:
                 if existing:
                     continue
                 
+                # Extract images if available
+                api_images = []
+                if listing.get('propertyPhotos'):
+                    api_images = [photo for photo in listing['propertyPhotos'] if photo]
+                
+                # Create extended description
+                extended_desc = f"Property from Realty Mole API\\nAddress: {address}\\nData source: Realty Mole Property API"
+                if listing.get('description'):
+                    extended_desc += f"\\n\\nDescription: {listing['description']}"
+                
+                # Extract amenities
+                amenities = []
+                if listing.get('propertyType'):
+                    amenities.append(f"Type: {listing['propertyType']}")
+                if listing.get('rentEstimate'):
+                    amenities.append(f"Estimated Rent: ${listing['rentEstimate']}")
+                if listing.get('squareFootage'):
+                    amenities.append(f"Square Footage: {listing['squareFootage']} sq ft")
+                
                 # Create property
                 new_property = Property(
                     title=title,
@@ -352,7 +413,21 @@ class MultiSourceFetcher:
                     latitude=listing.get('latitude'),
                     longitude=listing.get('longitude'),
                     landlord_id=default_landlord.id,
-                    is_active=True
+                    is_active=True,
+                    # New 3rd party API fields
+                    original_listing_url=listing.get('url'),
+                    api_source='realty_mole',
+                    api_property_id=str(listing.get('id', '')),
+                    api_images=api_images,
+                    extended_description=extended_desc,
+                    api_amenities=amenities,
+                    api_metadata={
+                        'property_type': listing.get('propertyType'),
+                        'rent_estimate': listing.get('rentEstimate'),
+                        'square_footage': listing.get('squareFootage'),
+                        'year_built': listing.get('yearBuilt'),
+                        'lot_size': listing.get('lotSize')
+                    }
                 )
                 
                 db.add(new_property)
@@ -480,11 +555,54 @@ class MultiSourceFetcher:
         if advertisers:
             advertiser = advertisers[0]
             office = advertiser.get('office', {})
+            agent = advertiser.get('agent', {})
+            
             if office and office.get('name'):
                 landlord_info['company_name'] = office['name']
                 landlord_info['unique_key'] = office['name'].lower().replace(' ', '_').replace('.', '')
+                
+                # Enhanced landlord information from API
+                landlord_info.update({
+                    'contact_phone': office.get('phone'),
+                    'website_url': office.get('website'),
+                    'office_address': self._format_office_address(office.get('address', {})),
+                    'profile_image_url': office.get('photo', {}).get('href'),
+                    'api_source': 'realtor16',
+                    'api_metadata': {
+                        'office_id': office.get('id'),
+                        'agent_name': f"{agent.get('first_name', '')} {agent.get('last_name', '')}".strip(),
+                        'agent_phone': agent.get('phone'),
+                        'agent_email': agent.get('email'),
+                        'mls_id': office.get('mls_id')
+                    }
+                })
+            elif agent:
+                # If no office, use agent information
+                agent_name = f"{agent.get('first_name', '')} {agent.get('last_name', '')}".strip()
+                if agent_name:
+                    landlord_info['company_name'] = f"{agent_name} - Real Estate Agent"
+                    landlord_info['unique_key'] = agent_name.lower().replace(' ', '_')
+                    landlord_info['contact_phone'] = agent.get('phone')
+                    landlord_info['email'] = agent.get('email')
         
         return landlord_info
+    
+    def _format_office_address(self, address_data: Dict) -> str:
+        """Format office address from API data"""
+        if not address_data:
+            return None
+        
+        parts = []
+        if address_data.get('line'):
+            parts.append(address_data['line'])
+        if address_data.get('city'):
+            parts.append(address_data['city'])
+        if address_data.get('state_code'):
+            parts.append(address_data['state_code'])
+        if address_data.get('postal_code'):
+            parts.append(address_data['postal_code'])
+        
+        return ', '.join(parts) if parts else None
     
     def _get_or_create_api_landlord(self, db: Session, landlord_info: Dict) -> Optional[LandlordProfile]:
         """Get or create landlord from API data"""
@@ -518,7 +636,15 @@ class MultiSourceFetcher:
                 user_id=existing_user.id,
                 company_name=landlord_info['company_name'],
                 description=landlord_info.get('description', 'API-generated property management'),
-                verification_status=True
+                verification_status=True,
+                # Enhanced fields from API
+                contact_phone=landlord_info.get('contact_phone'),
+                website_url=landlord_info.get('website_url'),
+                email=landlord_info.get('email'),
+                office_address=landlord_info.get('office_address'),
+                profile_image_url=landlord_info.get('profile_image_url'),
+                api_source=landlord_info.get('api_source'),
+                api_metadata=landlord_info.get('api_metadata')
             )
             
             db.add(new_landlord)

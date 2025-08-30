@@ -93,6 +93,14 @@ class LandlordProfile(Base):
     verification_status = Column(Boolean, default=False)  # Whether landlord is verified
     created_at = Column(DateTime, default=datetime.utcnow)
     
+    # Additional fields for 3rd party API data
+    profile_image_url = Column(String, nullable=True)  # Landlord/company profile image
+    website_url = Column(String, nullable=True)  # Company website
+    email = Column(String, nullable=True)  # Contact email
+    office_address = Column(String, nullable=True)  # Office address
+    api_source = Column(String, nullable=True)  # Source of landlord data (realtor16, etc.)
+    api_metadata = Column(JSON, nullable=True)  # Additional API metadata
+    
     # Relationship back to user
     user = relationship("User", back_populates="landlord_profile")
     # list of properties
@@ -147,6 +155,15 @@ class Property(Base):
     address = Column(String, nullable=True)
     city = Column(String, nullable=True)
     postal_code = Column(String, nullable=True)
+    
+    # 3rd Party API Data Fields
+    original_listing_url = Column(String, nullable=True)  # Original housing website link
+    api_source = Column(String, nullable=True)  # realtor16, realty_mole, etc.
+    api_property_id = Column(String, nullable=True)  # Property ID from API
+    api_images = Column(JSON, nullable=True)  # Images from API stored as JSON array
+    extended_description = Column(Text, nullable=True)  # Additional description from API
+    api_amenities = Column(JSON, nullable=True)  # Amenities from API stored as JSON
+    api_metadata = Column(JSON, nullable=True)  # Additional metadata from API
     
     # Relationships
     landlord = relationship("LandlordProfile", back_populates="listed_properties")

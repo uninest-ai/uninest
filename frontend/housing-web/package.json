@@ -10,21 +10,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@headlessui/react": "^1.7.18",
+    // "@headlessui/react": "^1.7.18",  // UNUSED - No imports found
     "@heroicons/react": "^2.1.1",
     "@react-google-maps/api": "^2.19.3",
     "axios": "^1.6.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-dropzone": "^14.2.3",
-    "react-hot-toast": "^2.4.1",
-    "react-icons": "^5.0.1",
+    // "react-dropzone": "^14.2.3",  // UNUSED - No imports found
+    // "react-hot-toast": "^2.4.1",  // UNUSED - No imports found
+    // "react-icons": "^5.0.1",  // UNUSED - Using @heroicons/react instead
     "react-router-dom": "^6.22.1",
     "websocket": "^1.0.35"
   },
   "devDependencies": {
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.19",
+    // "@types/react": "^18.2.55",  // UNUSED - No TypeScript files
+    // "@types/react-dom": "^18.2.19",  // UNUSED - No TypeScript files
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
     "eslint": "^8.56.0",

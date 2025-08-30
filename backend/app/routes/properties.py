@@ -60,13 +60,18 @@ def get_property(
     property_id: int,
     db: Session = Depends(get_db)
 ):
-    """Get a specific property by ID with all its images"""
+    """Get a specific property by ID with all its images and landlord information"""
     property = db.query(Property).filter(Property.id == property_id).first()
     if property is None:
         raise HTTPException(status_code=404, detail="Property not found")
     
-    # All images
+    # Refresh to load images
     db.refresh(property)
+    
+    # Load landlord information
+    if property.landlord_id:
+        landlord = db.query(LandlordProfile).filter(LandlordProfile.id == property.landlord_id).first()
+        property.landlord = landlord
     
     return property
 

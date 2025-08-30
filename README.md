@@ -155,6 +155,7 @@ For questions, bug reports, or feature requests:
 
 ---
 ## Personal notes:
+### Usage:
 ```
 # Connect ubuntu
 ssh -v -i "D:\ahYen Workspace\ahYen Work\CMU_academic\MSCD_Y1_2425\17637-WebApps\uninest_mykey_new.pem" ec2-user@3.145.189.113
@@ -171,7 +172,7 @@ docker-compose build
 docker-compose build --no-cache # clean rebuild
 
 # 3
-docker-compose up
+docker-compose up -d
 
 # 4
 docker-compose down
@@ -192,8 +193,8 @@ docker-compose logs
 ### Commands:
 1. reset db
 ```
-curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-real-properties?property_count=5"   
-  -H "X-Admin-Key: MY-ADMIN-KEY"
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-real-properties?property_count=0" \
+  -H "X-Admin-Key: Admin123456"
 ```
 2. fetch
 ```
@@ -210,10 +211,117 @@ sudo docker compose down && sudo docker compose up -d --build
 2. `http://3.145.189.113/preference` 
   Overall: the AI call respond is slow, sue
   The Image part
-  - doesn't have a loading icon when parsing the image
+  - [/] doesn't have a loading icon when parsing the image
   The chat part
-  - doesn't have a initial message in the chat box "Let's talk about what kind of room you like!"
+  - [/] doesn't have a initial message in the chat box "Let's talk about what kind of room you like!"
   - final reply message not showing the preference collected "Sure, it sounds like having a separate and spacious study room is an important factor for you in your new home. Here's the preference you provided: ```json ```"
 3. `http://3.145.189.113/property-detail/46`:
- - landlord information not showing
-4. Connect database to realworld data by 3rd party API
+ - landlord information not showing: image, original housing link, description details etc.
+4. [/] Connect database to realworld data by 3rd party API
+
+---
+## Complete 3rd Party Real Estate API Integration
+
+✅ 1. Multi-Source API Integration
+
+Primary APIs Integrated:
+- Realtor16 API - Main source for Pittsburgh properties
+- Realty Mole API - Secondary rental listings
+- Custom Pittsburgh Data - Neighborhood-specific properties near CMU
+
+✅ 2. Advanced Multi-Source Fetcher (multi_source_fetcher.py)
+
+Features:
+- Smart Source Prioritization - Uses best APIs first
+- Rate Limiting - Respects API limits
+- Comprehensive Data Processing - Extracts detailed property info
+- Automatic Landlord Creation - Creates verified landlord profiles
+- Neighborhood Targeting - Focuses on CMU-area locations
+- Error Handling - Graceful failures and retries
+
+✅ 3. Enhanced Admin Endpoints
+
+New Endpoints Added:
+
+# Multi-source comprehensive sync
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-multi-source-properties?property_count=50" \
+  -H "X-Admin-Key: Admin123456"
+
+# Property source analytics
+curl -X GET "http://3.145.189.113:8000/api/v1/admin/property-sources" \
+  -H "X-Admin-Key: Admin123456"
+
+✅ 4. Automated Sync Scheduler (sync_scheduler.py)
+
+Automatic Scheduling:
+- Daily Comprehensive Sync (6 AM) - Full data refresh
+- Hourly Incremental Updates - Latest properties
+- Weekly Cleanup (Sundays 3 AM) - Remove old listings
+
+Scheduler Control Endpoints:
+
+# Start automatic sync
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/sync/start" \
+  -H "X-Admin-Key: Admin123456"
+
+# Manual trigger any sync type
+curl -X POST
+"http://3.145.189.113:8000/api/v1/admin/sync/manual?sync_type=comprehensive" \
+  -H "X-Admin-Key: Admin123456"
+
+# Check scheduler status
+curl -X GET "http://3.145.189.113:8000/api/v1/admin/sync/status" \
+  -H "X-Admin-Key: Admin123456"
+
+✅ 5. Real Estate Data Quality Features
+
+Smart Data Processing:
+- Address Normalization - Consistent formatting
+- Price Validation - Realistic CMU-area pricing
+- Coordinate Mapping - Accurate Pittsburgh locations
+- Property Type Classification - Apartment, house, condo, etc.
+- Duplicate Prevention - No duplicate listings
+- Source Attribution - Track data origins
+
+Pittsburgh Neighborhood Focus:
+- Oakland, Shadyside, Squirrel Hill
+- Greenfield, Point Breeze, Regent Square
+- Bloomfield, Friendship
+- All near CMU and University of Pittsburgh
+
+✅ 6. Advanced Property Analytics
+
+Data Quality Metrics:
+- Properties by API source
+- Neighborhood distribution
+- Price range analysis
+- Property type breakdown
+- Coordinate coverage stats
+- Update frequency tracking
+
+🚀 How to Use
+
+1. Quick Start - Fetch Real Properties Now:
+
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-multi-source-properties?property_count=30" \
+  -H "X-Admin-Key: Admin123456"
+
+2. Start Automatic Daily Sync:
+
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/sync/start" \
+  -H "X-Admin-Key: Admin123456"
+
+3. Check Your Data:
+
+curl -X GET "http://3.145.189.113:8000/api/v1/admin/property-sources" \
+  -H "X-Admin-Key: Admin123456"
+
+📊 What You Get
+
+- Real Properties from Realtor.com and other major sources
+- Verified Landlords with contact information
+- Accurate Coordinates for map display
+- Pittsburgh Focus - CMU student-relevant areas
+- Fresh Data - Automatic daily updates
+- Source Attribution - Know where each property came from
+- Quality Analytics - Monitor your data health
