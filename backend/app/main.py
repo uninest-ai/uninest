@@ -9,7 +9,12 @@ from app.routes import image_analysis, chat_ai, recommendations
 from app.routes import admin_sync
 
 # Create database tables
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created/verified successfully")
+except Exception as e:
+    print(f"Database connection failed: {e}")
+    print("Backend will start but database operations may fail")
 
 app = FastAPI(
     title="HorizonHome API",

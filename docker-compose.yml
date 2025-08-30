@@ -8,8 +8,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # 这些变量会从项目根目录的 .env 文件中自动加载并注入到 backend 容器
-      - DATABASE_URL=${DATABASE_URL}
+      # Use local database instead of RDS
+      - DATABASE_URL=postgresql://uninest_admin:UniNest070809@db:5432/uninest
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -17,9 +17,9 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - RAPIDAPI_KEY=${RAPIDAPI_KEY}
       - ADMIN_SECRET=${ADMIN_SECRET}
-      # VITE_API_BASE_URL 和 EC2_PUBLIC_IP 通常不需要在后端环境
-    restart: unless-stopped # 推荐：容器异常退出时自动重启
-    # depends_on: - db # 如果你使用外部 RDS，则不需要依赖本地 db 服务
+    depends_on:
+      - db
+    restart: unless-stopped
 
   frontend:
     build:
@@ -34,19 +34,18 @@ services:
       - backend
     restart: unless-stopped
 
-  # 如果你确实在本地开发时需要一个 Postgres 数据库 (与 RDS 并行或用于测试)
-  # db:
-  #   image: postgres:13
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   environment:
-  #     # 这些值应与你的 .env 中的 DATABASE_URL (如果用于本地) 分开管理或保持一致
-  #     - POSTGRES_USER=your_local_db_user # 建议从 .env 读取, e.g., ${LOCAL_DB_USER}
-  #     - POSTGRES_PASSWORD=your_local_db_password # 建议从 .env 读取
-  #     - POSTGRES_DB=your_local_db_name # 建议从 .env 读取
-  #   ports:
-  #     - "5433:5432" # 映射到不同主机端口以避免与外部 RDS 混淆
-  #   restart: unless-stopped
+  # Local PostgreSQL database for development
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=uninest_admin
+      - POSTGRES_PASSWORD=UniNest070809
+      - POSTGRES_DB=uninest
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
 
-# volumes: # 只有在你使用本地 db 服务时才需要这个
-#   postgres_data:
+volumes:
+  postgres_data:

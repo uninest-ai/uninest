@@ -8,7 +8,12 @@ from app.config import settings
 class SimpleImageAnalysisService:
     def __init__(self):
         self.api_key = settings.OPENAI_API_KEY
-        self.client = OpenAI(api_key=self.api_key)
+        try:
+            self.client = OpenAI(api_key=self.api_key)
+            print("OpenAI client initialized successfully")
+        except Exception as e:
+            print(f"Warning: OpenAI client initialization failed: {e}")
+            self.client = None
     
     def _extract_features(self, image_bytes: bytes, analysis_type: str) -> Dict[str, Any]:
         """
@@ -21,6 +26,9 @@ class SimpleImageAnalysisService:
         Returns:
             Dictionary of extracted features
         """
+        if self.client is None:
+            return {"error": "OpenAI client not available"}
+            
         # Encode image to base64
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
         
