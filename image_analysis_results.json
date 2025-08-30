@@ -1,0 +1,80 @@
+{
+  "analyzed": 10,
+  "with_property_images": 0,
+  "need_migration": 9,
+  "no_images": 1,
+  "migration_candidates": [
+    {
+      "id": 1,
+      "title": "NoneBR/NoneBA Apartment",
+      "api_images": [
+        "https://ar.rdcpix.com/5d251a9e12edc3508e326306f7d7c3d0c-f2209203381s.jpg",
+        "https://ar.rdcpix.com/5d251a9e12edc3508e326306f7d7c3d0c-f716391261s.jpg"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "2BR/1BA Apartment",
+      "api_images": [
+        "https://ap.rdcpix.com/08eecc565e8dd9fbecc85b2287d9fe29l-m1913496513s.jpg",
+        "https://ap.rdcpix.com/08eecc565e8dd9fbecc85b2287d9fe29l-m4203691149s.jpg"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "2BR/1BA Apartment",
+      "api_images": [
+        "https://ap.rdcpix.com/f74e85a0c5883dd6b1268fb68297d169l-m818868505s.jpg",
+        "https://ap.rdcpix.com/f74e85a0c5883dd6b1268fb68297d169l-m1689551708s.jpg"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "3BR/2BA Single Family",
+      "api_images": [
+        "https://ap.rdcpix.com/acdf405b3d2f911f4bac507f8c5cb176l-b898573106s.jpg",
+        "https://ap.rdcpix.com/acdf405b3d2f911f4bac507f8c5cb176l-b2122179514s.jpg"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "NoneBR/NoneBA Apartment",
+      "api_images": [
+        "https://ar.rdcpix.com/eae410977deb1fbe4c535ef6cbd54e40c-f4256898294s.jpg",
+        "https://ar.rdcpix.com/eae410977deb1fbe4c535ef6cbd54e40c-f142054697s.jpg"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "2BR/1BA Single Family",
+      "api_images": [
+        "https://ap.rdcpix.com/8523424e85f64e51a1b5af1f07d09855l-b2736482765s.jpg",
+        "https://ap.rdcpix.com/8523424e85f64e51a1b5af1f07d09855l-b765709644s.jpg"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "3BR/1.5BA Single Family",
+      "api_images": [
+        "https://ap.rdcpix.com/7e5d46b5028c4886c2fedf648473d0afl-m3245678743s.jpg",
+        "https://ap.rdcpix.com/7e5d46b5028c4886c2fedf648473d0afl-m804206718s.jpg"
+      ]
+    },
+    {
+      "id": 8,
+      "title": "2BR/1.5BA Townhomes",
+      "api_images": [
+        "https://ap.rdcpix.com/aadcffd5422ff99b23b276b7f2cd9dc9l-m1073036565s.jpg",
+        "https://ap.rdcpix.com/aadcffd5422ff99b23b276b7f2cd9dc9l-m3558016735s.jpg"
+      ]
+    },
+    {
+      "id": 9,
+      "title": "3BR/1.5BA Single Family",
+      "api_images": [
+        "https://ap.rdcpix.com/1caf98b5d98178e7116b1f2037d636e3l-m1882589596s.jpg",
+        "https://ap.rdcpix.com/1caf98b5d98178e7116b1f2037d636e3l-m556979591s.jpg"
+      ]
+    }
+  ]
+}

@@ -21,6 +21,25 @@ const PropertyDetail = () => {
   const [userType, setUserType] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mapCenter, setMapCenter] = useState(null);
+  
+  // Helper function to get available images
+  const getAvailableImages = () => {
+    // First try PropertyImage records
+    if (images && images.length > 0) {
+      return images;
+    }
+    
+    // Fallback to api_images from property
+    if (property?.api_images && property.api_images.length > 0) {
+      return property.api_images.map((url, index) => ({
+        id: `api-${index}`,
+        image_url: url,
+        is_primary: index === 0
+      }));
+    }
+    
+    return [];
+  };
 
   useEffect(() => {
     // 从 localStorage 获取用户类型
@@ -76,11 +95,13 @@ const PropertyDetail = () => {
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+    const availableImages = getAvailableImages();
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : availableImages.length - 1));
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+    const availableImages = getAvailableImages();
+    setCurrentImageIndex((prev) => (prev < availableImages.length - 1 ? prev + 1 : 0));
   };
 
   if (loading) {
@@ -142,14 +163,16 @@ const PropertyDetail = () => {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* 图片展示区域 */}
           <div className="relative h-96">
-            {images.length > 0 ? (
+            {(() => {
+              const availableImages = getAvailableImages();
+              return availableImages.length > 0 ? (
               <>
                 <img
-                  src={images[currentImageIndex].image_url}
+                  src={availableImages[currentImageIndex]?.image_url}
                   alt={`Property ${currentImageIndex + 1}`}
                   className="w-full h-full object-cover"
                 />
-                {images.length > 1 && (
+                {availableImages.length > 1 && (
                   <>
                     <button
                       onClick={handlePrevImage}
@@ -166,17 +189,20 @@ const PropertyDetail = () => {
                   </>
                 )}
               </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                No images available
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                  No images available
+                </div>
+              );
+            })()}
           </div>
 
           {/* 缩略图区域 */}
-          {images.length > 1 && (
-            <div className="flex overflow-x-auto p-4 gap-4">
-              {images.map((image, index) => (
+          {(() => {
+            const availableImages = getAvailableImages();
+            return availableImages.length > 1 && (
+              <div className="flex overflow-x-auto p-4 gap-4">
+                {availableImages.map((image, index) => (
                 <img
                   key={index}
                   src={image.image_url}
@@ -188,7 +214,8 @@ const PropertyDetail = () => {
                 />
               ))}
             </div>
-          )}
+            );
+          })()}
 
           {/* 房产信息 */}
           <div className="p-6">

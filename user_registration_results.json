@@ -1,0 +1,74 @@
+{
+  "summary": {
+    "total": 8,
+    "successful": 8,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "results": [
+    {
+      "email": "alice.chen@cmu.edu",
+      "username": "alicechen",
+      "user_type": "tenant",
+      "success": true,
+      "status_code": 200,
+      "error": null
+    },
+    {
+      "email": "bob.martinez@gmail.com",
+      "username": "bobmartinez",
+      "user_type": "tenant",
+      "success": true,
+      "status_code": 200,
+      "error": null
+    },
+    {
+      "email": "carol.wang@andrew.cmu.edu",
+      "username": "carolwang",
+      "user_type": "tenant",
+      "success": true,
+      "status_code": 200,
+      "error": null
+    },
+    {
+      "email": "david.kim@cmu.edu",
+      "username": "davidkim",
+      "user_type": "tenant",
+      "success": true,
+      "status_code": 200,
+      "error": null
+    },
+    {
+      "email": "emma.johnson@gmail.com",
+      "username": "emmajohnson",
+      "user_type": "tenant",
+      "success": true,
+      "status_code": 200,
+      "error": null
+    },
+    {
+      "email": "john.smith@properties.com",
+      "username": "johnsmith_realty",
+      "user_type": "landlord",
+      "success": true,
+      "status_code": 200,
+      "error": null
+    },
+    {
+      "email": "sarah.wilson@realty.com",
+      "username": "sarahwilson_pm",
+      "user_type": "landlord",
+      "success": true,
+      "status_code": 200,
+      "error": null
+    },
+    {
+      "email": "mike.brown@company.com",
+      "username": "mikebrown_properties",
+      "user_type": "landlord",
+      "success": true,
+      "status_code": 200,
+      "error": null
+    }
+  ]
+}

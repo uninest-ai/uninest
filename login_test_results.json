@@ -1,0 +1,42 @@
+{
+  "summary": {
+    "total": 4,
+    "successful": 4,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "results": [
+    {
+      "email": "alice.chen@cmu.edu",
+      "user_type": "tenant",
+      "success": true,
+      "status_code": 200,
+      "has_token": true,
+      "error": null
+    },
+    {
+      "email": "bob.martinez@gmail.com",
+      "user_type": "tenant",
+      "success": true,
+      "status_code": 200,
+      "has_token": true,
+      "error": null
+    },
+    {
+      "email": "john.smith@properties.com",
+      "user_type": "landlord",
+      "success": true,
+      "status_code": 200,
+      "has_token": true,
+      "error": null
+    },
+    {
+      "email": "sarah.wilson@realty.com",
+      "user_type": "landlord",
+      "success": true,
+      "status_code": 200,
+      "has_token": true,
+      "error": null
+    }
+  ]
+}

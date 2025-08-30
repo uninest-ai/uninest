@@ -303,7 +303,7 @@ Data Quality Metrics:
 
 1. Quick Start - Fetch Real Properties Now:
 
-curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-multi-source-properties?property_count=30" \
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-multi-source-properties?property_count=100" \
   -H "X-Admin-Key: Admin123456"
 
 2. Start Automatic Daily Sync:

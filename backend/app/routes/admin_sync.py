@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import text 
 
 from app.database import get_db
-from app.models import LandlordProfile, User, Property  
+from app.models import LandlordProfile, User, Property, PropertyImage  
 from app.services.rapidapi_fetcher import RapidAPIFetcher
 from app.services.realtor16_fetcher import Realtor16Fetcher
 from app.services.multi_source_fetcher import MultiSourceFetcher
@@ -863,4 +863,191 @@ async def get_property_details(
         raise HTTPException(
             status_code=500,
             detail=f"Error getting property details: {str(e)}"
+        )
+
+@router.post("/admin/migrate-images")
+async def migrate_api_images_to_property_images(
+    admin_verified: bool = Depends(verify_admin_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Migrate API images from api_images field to PropertyImage records
+    
+    This fixes the issue where scraped images are stored in api_images JSON field
+    but not displayed on the frontend because they're not in PropertyImage table.
+    
+    Usage:
+    curl -X POST "http://3.145.189.113:8000/api/v1/admin/migrate-images" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    
+    try:
+        import json
+        
+        print("Starting API images migration...")
+        
+        # Get all properties with api_images
+        properties_with_images = db.query(Property).filter(
+            Property.api_images.is_not(None),
+            Property.api_images != "[]",
+            Property.api_images != ""
+        ).all()
+        
+        if not properties_with_images:
+            return {
+                "success": True,
+                "message": "No properties with API images found",
+                "migrated_properties": 0,
+                "total_images_created": 0,
+                "skipped_properties": 0,
+                "errors": []
+            }
+        
+        migrated_count = 0
+        skipped_count = 0
+        total_images = 0
+        errors = []
+        
+        for prop in properties_with_images:
+            try:
+                # Check if images already exist for this property
+                existing_images = db.query(PropertyImage).filter(
+                    PropertyImage.property_id == prop.id
+                ).count()
+                
+                if existing_images > 0:
+                    skipped_count += 1
+                    continue
+                
+                # Parse api_images JSON
+                api_images = prop.api_images
+                if isinstance(api_images, str):
+                    try:
+                        api_images = json.loads(api_images)
+                    except json.JSONDecodeError:
+                        errors.append(f"Property {prop.id}: Invalid JSON in api_images")
+                        continue
+                
+                if not api_images or not isinstance(api_images, list):
+                    continue
+                
+                # Create PropertyImage records
+                images_created = 0
+                for i, image_url in enumerate(api_images):
+                    if not image_url or not isinstance(image_url, str):
+                        continue
+                        
+                    # Create PropertyImage record
+                    property_image = PropertyImage(
+                        property_id=prop.id,
+                        image_url=image_url,
+                        is_primary=(i == 0),  # First image is primary
+                        labels=None,
+                        created_at=datetime.utcnow()
+                    )
+                    
+                    db.add(property_image)
+                    images_created += 1
+                    total_images += 1
+                
+                if images_created > 0:
+                    # Update property's main image_url if it's null
+                    if not prop.image_url:
+                        prop.image_url = api_images[0]
+                    
+                    migrated_count += 1
+                
+            except Exception as e:
+                errors.append(f"Property {prop.id}: {str(e)}")
+                db.rollback()
+                continue
+        
+        # Commit all changes
+        if migrated_count > 0:
+            db.commit()
+        
+        # Add fallback images for properties without any images
+        fallback_added = 0
+        try:
+            # Fallback image URLs (using Unsplash for realistic property photos)
+            fallback_images = [
+                "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop&crop=entropy&cs=tinysrgb",  # Modern house
+                "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&crop=entropy&cs=tinysrgb",  # Beautiful home
+                "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=600&fit=crop&crop=entropy&cs=tinysrgb",  # Contemporary house
+                "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&h=600&fit=crop&crop=entropy&cs=tinysrgb",  # Apartment building
+                "https://images.unsplash.com/photo-1519452465094-7d23f0b4a4b1?w=800&h=600&fit=crop&crop=entropy&cs=tinysrgb",  # Studio apartment
+            ]
+            
+            # Find properties without images
+            properties_without_images = db.query(Property).outerjoin(PropertyImage).filter(
+                PropertyImage.id.is_(None),
+                Property.is_active == True
+            ).all()
+            
+            for prop in properties_without_images:
+                # Choose fallback image based on property type
+                if prop.property_type == 'apartment':
+                    fallback_url = fallback_images[3]  # Apartment building
+                elif prop.property_type == 'studio':
+                    fallback_url = fallback_images[4]  # Studio
+                elif prop.property_type == 'house':
+                    fallback_url = fallback_images[0]  # Modern house
+                elif prop.property_type == 'condo':
+                    fallback_url = fallback_images[2]  # Contemporary house
+                else:
+                    fallback_url = fallback_images[1]  # Default beautiful home
+                
+                try:
+                    # Create fallback PropertyImage
+                    property_image = PropertyImage(
+                        property_id=prop.id,
+                        image_url=fallback_url,
+                        is_primary=True,
+                        labels=["fallback_image"],
+                        created_at=datetime.utcnow()
+                    )
+                    
+                    db.add(property_image)
+                    
+                    # Update property's main image_url if it's null
+                    if not prop.image_url:
+                        prop.image_url = fallback_url
+                    
+                    fallback_added += 1
+                    
+                except Exception as e:
+                    errors.append(f"Fallback for Property {prop.id}: {str(e)}")
+            
+            if fallback_added > 0:
+                db.commit()
+                
+        except Exception as e:
+            errors.append(f"Fallback images error: {str(e)}")
+        
+        # Verification
+        total_properties = db.query(Property).filter(Property.is_active == True).count()
+        properties_with_property_images = db.query(Property).join(PropertyImage).filter(Property.is_active == True).distinct().count()
+        total_property_images = db.query(PropertyImage).count()
+        
+        return {
+            "success": True,
+            "message": "Image migration completed successfully",
+            "migrated_properties": migrated_count,
+            "total_images_created": total_images,
+            "fallback_images_added": fallback_added,
+            "skipped_properties": skipped_count,
+            "errors": errors,
+            "verification": {
+                "total_active_properties": total_properties,
+                "properties_with_images": properties_with_property_images,
+                "total_property_images": total_property_images,
+                "coverage_percentage": round((properties_with_property_images / total_properties * 100), 2) if total_properties > 0 else 0
+            }
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error during image migration: {str(e)}"
         )
