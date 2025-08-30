@@ -303,7 +303,7 @@ const RecommendationPage = () => {
                     <img
                       src={
                         property.image_url ||
-                        "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80"
+                        "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/450px-No_image_available.svg.png?20250720084638"
                       }
                       alt={property.title}
                       className="w-full h-full object-cover"

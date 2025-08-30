@@ -277,9 +277,17 @@ class MultiSourceFetcher:
                     listing_url = f"https://www.realtor.com/realestateandhomes-detail/{prop.get('property_id')}"
                 
                 # Create extended description with API data
-                extended_desc = f"Real estate listing from Realtor16 API\\n{full_address}\\nProperty ID: {prop.get('property_id', 'N/A')}"
-                if prop.get('description'):
-                    extended_desc += f"\\n\\nProperty Description:\\n{prop.get('description')}"
+                extended_desc = f"Real estate listing from Realtor16 API\n{full_address}\nProperty ID: {prop.get('property_id', 'N/A')}"
+                
+                # Format property description from dict
+                desc_dict = prop.get('description', {})
+                if isinstance(desc_dict, dict):
+                    formatted_desc = []
+                    for key, value in desc_dict.items():
+                        if value is not None and value != '':
+                            formatted_desc.append(f"{key.replace('_', ' ').title()}: {value}")
+                    if formatted_desc:
+                        extended_desc += f"\n\nProperty Details:\n" + "\n".join(formatted_desc)
                 
                 # Extract amenities and features
                 amenities = []
@@ -294,7 +302,7 @@ class MultiSourceFetcher:
                 new_property = Property(
                     title=title,
                     price=float(price),
-                    description=f"Real estate listing from Realtor16 API\\n{full_address}\\nProperty ID: {prop.get('property_id', 'N/A')}",
+                    description=f"Beautiful {prop_type.replace('_', ' ').title()} in Pittsburgh\n\nLocation: {full_address}\nProperty ID: {prop.get('property_id', 'N/A')}\n\nThis property is sourced from Realtor16 API and offers great value in the Pittsburgh area.",
                     property_type=self._normalize_property_type(prop_type),
                     bedrooms=beds,
                     bathrooms=self._parse_bathrooms(baths),
@@ -387,9 +395,9 @@ class MultiSourceFetcher:
                     api_images = [photo for photo in listing['propertyPhotos'] if photo]
                 
                 # Create extended description
-                extended_desc = f"Property from Realty Mole API\\nAddress: {address}\\nData source: Realty Mole Property API"
+                extended_desc = f"Property from Realty Mole API\nAddress: {address}\nData source: Realty Mole Property API"
                 if listing.get('description'):
-                    extended_desc += f"\\n\\nDescription: {listing['description']}"
+                    extended_desc += f"\n\nDescription: {listing['description']}"
                 
                 # Extract amenities
                 amenities = []
@@ -404,7 +412,7 @@ class MultiSourceFetcher:
                 new_property = Property(
                     title=title,
                     price=price,
-                    description=f"Property from Realty Mole API\\nAddress: {address}\\nData source: Realty Mole Property API",
+                    description=f"Quality rental property in Pittsburgh\n\nAddress: {address}\nData sourced from Realty Mole Property API\n\nThis property offers great amenities and is well-located in the Pittsburgh area.",
                     property_type='apartment',
                     bedrooms=listing.get('bedrooms', 1),
                     bathrooms=listing.get('bathrooms', 1),
@@ -483,7 +491,7 @@ class MultiSourceFetcher:
         return {
             'title': f"{bedrooms}BR/{bathrooms}BA {property_type.title()} in {neighborhood['name']}",
             'price': price,
-            'description': f"Beautiful {property_type} in {neighborhood['name']} neighborhood\\nClose to CMU and University of Pittsburgh\\nWalking distance to public transportation\\nNear restaurants and shopping",
+            'description': f"Beautiful {property_type} in {neighborhood['name']} neighborhood\n\nClose to CMU and University of Pittsburgh\nWalking distance to public transportation\nNear restaurants and shopping\n\nThis {property_type} offers modern amenities and great location for students and professionals.",
             'property_type': property_type,
             'bedrooms': bedrooms,
             'bathrooms': bathrooms,

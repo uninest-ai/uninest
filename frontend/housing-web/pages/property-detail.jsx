@@ -425,9 +425,22 @@ const PropertyDetail = () => {
                     {property.extended_description && property.extended_description !== property.description && (
                       <div className="mb-4">
                         <h3 className="text-sm font-medium text-gray-500">Additional Details</h3>
-                        <p className="mt-1 text-black whitespace-pre-line text-sm">
-                          {property.extended_description}
-                        </p>
+                        <div className="mt-1 text-black text-sm">
+                          {property.extended_description.split('\n').map((line, index) => (
+                            <div key={index} className="mb-1">
+                              {line.trim() && (
+                                line.includes(':') ? (
+                                  <div className="flex">
+                                    <span className="font-medium mr-2">{line.split(':')[0]}:</span>
+                                    <span>{line.split(':').slice(1).join(':').trim()}</span>
+                                  </div>
+                                ) : (
+                                  <p>{line}</p>
+                                )
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 

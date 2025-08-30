@@ -35,9 +35,23 @@ async def chat_with_bot(
             preferences=result["preferences"]
         )
         
-        # Add preferences to database
-        for preference in preference_objects:
-            db.add(preference)
+        # Add preferences to database with upsert logic
+        for pref_obj in preference_objects:
+            # Check if preference already exists
+            existing_pref = db.query(UserPreference).filter(
+                UserPreference.user_id == pref_obj.user_id,
+                UserPreference.preference_key == pref_obj.preference_key,
+                UserPreference.preference_category == pref_obj.preference_category,
+                UserPreference.source == pref_obj.source
+            ).first()
+            
+            if existing_pref:
+                # Update existing preference
+                existing_pref.preference_value = pref_obj.preference_value
+                existing_pref.created_at = pref_obj.created_at
+            else:
+                # Add new preference
+                db.add(pref_obj)
         db.commit()
     
     return {"response": result["response"]}
@@ -66,14 +80,29 @@ async def chat_with_bot_full_response(
             preferences=result["preferences"]
         )
         
-        # Add preferences to database
-        for preference in preference_objects:
-            db.add(preference)
+        # Add preferences to database with upsert logic
+        for pref_obj in preference_objects:
+            # Check if preference already exists
+            existing_pref = db.query(UserPreference).filter(
+                UserPreference.user_id == pref_obj.user_id,
+                UserPreference.preference_key == pref_obj.preference_key,
+                UserPreference.preference_category == pref_obj.preference_category,
+                UserPreference.source == pref_obj.source
+            ).first()
+            
+            if existing_pref:
+                # Update existing preference
+                existing_pref.preference_value = pref_obj.preference_value
+                existing_pref.created_at = pref_obj.created_at
+            else:
+                # Add new preference
+                db.add(pref_obj)
         db.commit()
         
         # Refresh each preference object individually
-        for preference in preference_objects:
-            db.refresh(preference)
+        for pref_obj in preference_objects:
+            if pref_obj in db:
+                db.refresh(pref_obj)
     
     # Format preferences for response
     preferences_output = [
