@@ -36,6 +36,22 @@ const RecommendationPage = () => {
   const [propertyLimit, setPropertyLimit] = useState(10);
   const [roommateLimit, setRoommateLimit] = useState(10);
 
+  // Helper function to get the best available image for a property
+  const getPropertyImage = (property) => {
+    // First try property.image_url
+    if (property.image_url) {
+      return property.image_url;
+    }
+    
+    // Fallback to first api_image
+    if (property.api_images && property.api_images.length > 0) {
+      return property.api_images[0];
+    }
+    
+    // Default fallback
+    return "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/450px-No_image_available.svg.png?20250720084638";
+  };
+
   const libraries = useMemo(() => ["places", "marker"], []);
 
   const { isLoaded, loadError } = useLoadScript({
@@ -301,10 +317,7 @@ const RecommendationPage = () => {
                 >
                   <div className="relative h-48">
                     <img
-                      src={
-                        property.image_url ||
-                        "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/450px-No_image_available.svg.png?20250720084638"
-                      }
+                      src={getPropertyImage(property)}
                       alt={property.title}
                       className="w-full h-full object-cover"
                     />
