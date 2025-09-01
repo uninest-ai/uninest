@@ -1,4 +1,0 @@
-# Requirements for synthetic user generation script
-requests==2.31.0
-faker==20.1.0
-python-dotenv==1.0.0
