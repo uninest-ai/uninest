@@ -15,23 +15,23 @@ UniNest is a full-stack web application designed to help students find housing r
 
 ## Feature Screenshots
 ### User Register and Login
-![User Register Feature](demo-recording\register.gif)
+![User Register Feature](demo-recording/register.gif)
 
 ### AI Image Analysis and Chat Assistant for Preferences
-![Chat Feature](demo-recording\ai-preference.gif)
-![User Preference Result](demo-recording\user-preference.gif)
+![Chat Feature](demo-recording/ai-preference.gif)
+![User Preference Result](demo-recording/user-preference.gif)
 
 ### Property Recommendations
-![Recommendations](demo-recording\recommendation.gif)
+![Recommendations](demo-recording/recommendation.gif)
 
 ### Potential Roommate Message
-![Roommate Matching](demo-recording\message.gif)
+![Roommate Matching](demo-recording/message.gif)
 
 ### Landlord Register
-![Landlord Register](demo-recording\landlord-register.gif)
+![Landlord Register](demo-recording/landlord-register.gif)
 
 ### Landlord log properties
-![Log Properties](demo-recording\log-properties.gif)
+![Log Properties](demo-recording/log-properties.gif)
 ---
 
 *Built to simplify the housing search process through intelligent recommendations and AI assistance.*
