@@ -127,6 +127,135 @@ pytest
 
 The backend is deployed on AWS EC2
 
+Based on your project configuration, here is a complete process for deploying local backend code changes to an EC2 public server:
+
+### Method 1: SSH + Docker Deployment (Recommended)
+
+1. **Commit code changes locally and push to Git:**
+   ```bash
+   # In the project root directory
+   git add .
+   git commit -m "update backend code"
+   git push origin main
+   ```
+
+2. **SSH into your EC2 server:**
+   ```bash
+   ssh -i your-key.pem ubuntu@3.145.189.113
+   ```
+
+3. **Pull the latest code on the EC2 server:**
+   ```bash
+   cd /path/to/uninest  # Navigate to your project directory
+   git pull origin main
+   ```
+
+4. **Rebuild and start Docker containers:**
+   ```bash
+   # Stop existing containers
+   docker-compose down
+
+   # Rebuild backend only (faster if only backend code changes)
+   docker-compose build backend
+
+   # Start all services
+   docker-compose up -d
+
+   # Check logs to confirm successful startup
+   docker-compose logs backend
+   ```
+
+### Method 2: Hot Update (For Small Changes Only)
+
+If you only made a small change, you can edit directly on the server:
+
+```bash
+# SSH to the server
+ssh -i your-key.pem ubuntu@3.145.189.113
+
+# Edit the file
+cd /path/to/uninest/backend
+vim app/routes/your_file.py
+
+# Restart backend container
+docker-compose restart backend
+```
+
+### Method 3: CI/CD Automation (Recommended for Production)
+
+Create `.github/workflows/deploy.yml` in your project root:
+
+```yaml
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: 3.145.189.113
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /path/to/uninest
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+```
+
+## Useful Command Reference
+
+- Check running containers:
+  ```bash
+  docker-compose ps
+  ```
+
+- Check backend logs:
+  ```bash
+  docker-compose logs -f backend
+  ```
+
+- Restart only the backend (without rebuilding):
+  ```bash
+  docker-compose restart backend
+  ```
+
+- Fully rebuild and start:
+  ```bash
+  docker-compose down && docker-compose up -d --build
+  ```
+
+- Enter the backend container for debugging:
+  ```bash
+  docker-compose exec backend bash
+  ```
+
+## Notes
+
+1. **Environment Variables:** Make sure the `.env` file on the server contains all necessary environment variables.
+2. **Database Migrations:** If you changed models, don’t forget to run migrations:
+   ```bash
+   docker-compose exec backend alembic upgrade head
+   ```
+3. **Ports:** Backend is running on port 8000, Frontend on port 80.
+4. **Health Check:** After deployment, visit [http://3.145.189.113:8000/docs](http://3.145.189.113:8000/docs) to confirm the API is working.
+
+## Your Server Information
+
+- **EC2 IP:** 3.145.189.113
+- **Backend port:** 8000
+- **Frontend port:** 80
+- **Database:** PostgreSQL (in container) or RDS (production)
+
+Do you already have your server's SSH private key? If so, I can help you write a deployment script to automate this process.
+
+
 ## Contributors
 
 - Chia Hui Yen (huiyenc) - main
