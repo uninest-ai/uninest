@@ -10,6 +10,7 @@ psycopg2-binary==2.9.9  # Used implicitly by SQLAlchemy
 # Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==3.2.0  # Pin to version compatible with passlib 1.7.4
 python-multipart==0.0.9  # Used implicitly by FastAPI
 # PyJWT==2.8.0  # UNUSED - Functionality covered by python-jose
 

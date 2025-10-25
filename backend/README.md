@@ -106,85 +106,161 @@ OPENAI_API_KEY=your-openai-api-key
    ```
    pip install -r requirements.txt
    ```
-4. Run the application:
-   ```
-   uvicorn app.main:app --reload
-   ```
+4. **Build and start all services (backend + frontend + database):** (local & cloud)
+  ```
+  本地运行（你的电脑）
+
+  # 在你的WSL/本地运行
+  cd "/mnt/d/ahYen Workspace/ahYen 
+  Work/CMU_academic/MSCD_Y1_2425/17637-WebApps/uninest"
+
+  # 这些命令都是在本地运行，与云端无关
+  docker-compose up --build        # 启动本地Docker容器
+  docker-compose logs -f backend   # 查看本地容器日志
+  - 作用范围：只在你的电脑上
+  - 访问地址：http://localhost:8000
+  - 数据库：连接到你.env中配置的RDS（远程数据库）
+
+  云端部署（EC2服务器 3.145.189.113）
+
+  # 必须先SSH连接到服务器
+  ssh -i your-key.pem ubuntu@3.145.189.113
+
+  # 然后在服务器上运行
+  cd /path/to/uninest
+  git pull origin main                    # 拉取最新代码
+  docker-compose up -d --build           # 在服务器上重新构建
+  docker-compose logs -f backend         # 查看服务器容器日志
+  - 作用范围：云端服务器
+  - 访问地址：http://3.145.189.113:8000
+  - 公网用户可以访问
+
+  ---
+  完整的更新流程
+
+  步骤1：本地测试（在你电脑上）
+
+  # 在本地项目目录
+  cd "/mnt/d/ahYen Workspace/ahYen 
+  Work/CMU_academic/MSCD_Y1_2425/17637-WebApps/uninest"
+
+  # 修改代码后，本地测试
+  docker-compose up --build
+
+  # 查看日志确认没问题
+  docker-compose logs -f backend
+
+  # 测试API是否正常
+  curl http://localhost:8000/
+
+  步骤2：提交代码到Git
+
+  git add .
+  git commit -m "update backend code"
+  git push origin main
+
+  步骤3：SSH到云端服务器更新
+
+  # 连接到EC2
+  ssh -i your-key.pem ubuntu@3.145.189.113
+
+  # 进入项目目录
+  cd /path/to/uninest
+
+  # 拉取最新代码
+  git pull origin main
+
+  # 重新构建并启动
+  docker-compose down
+  docker-compose up -d --build
+
+  # 查看服务器日志
+  docker-compose logs -f backend
+
+  # 退出SSH（Ctrl+C停止查看日志，然后exit）
+  exit
+
+  步骤4：验证云端更新成功
+
+  # 在你本地电脑访问云端API
+  curl http://3.145.189.113:8000/
+  ```
 
 ## API Documentation
 
-When the application is running, you can access the Swagger UI documentation at:
-`http://localhost:8000/docs` or `http://ip-address:8000/docs`
+When the application is running, you can access the interactive Swagger UI documentation at:
+- **Local**: `http://localhost:8000/docs`
+- **Production**: `http://3.145.189.113:8000/docs`
 
 ## Testing
 
-Run tests with pytest:
-```
+Run the test suite with pytest:
+```bash
 pytest
+pytest -v  # verbose output
+pytest tests/test_specific.py  # run specific test file
 ```
+
+---
 
 ## Deployment
 
-The backend is deployed on AWS EC2
-
-Based on your project configuration, here is a complete process for deploying local backend code changes to an EC2 public server:
+The backend is deployed on AWS EC2 with Docker containers.
 
 ### Method 1: SSH + Docker Deployment (Recommended)
 
-1. **Commit code changes locally and push to Git:**
-   ```bash
-   # In the project root directory
-   git add .
-   git commit -m "update backend code"
-   git push origin main
-   ```
-
-2. **SSH into your EC2 server:**
-   ```bash
-   ssh -i your-key.pem ubuntu@3.145.189.113
-   ```
-
-3. **Pull the latest code on the EC2 server:**
-   ```bash
-   cd /path/to/uninest  # Navigate to your project directory
-   git pull origin main
-   ```
-
-4. **Rebuild and start Docker containers:**
-   ```bash
-   # Stop existing containers
-   docker-compose down
-
-   # Rebuild backend only (faster if only backend code changes)
-   docker-compose build backend
-
-   # Start all services
-   docker-compose up -d
-
-   # Check logs to confirm successful startup
-   docker-compose logs backend
-   ```
-
-### Method 2: Hot Update (For Small Changes Only)
-
-If you only made a small change, you can edit directly on the server:
-
+**Step 1: Commit and push local changes**
 ```bash
-# SSH to the server
+# In project root directory
+git add .
+git commit -m "update backend code"
+git push origin main
+```
+
+**Step 2: SSH into EC2 server**
+```bash
+ssh -i your-key.pem ubuntu@3.145.189.113
+```
+
+**Step 3: Pull latest code**
+```bash
+cd /path/to/uninest
+git pull origin main
+```
+
+**Step 4: Rebuild and restart containers**
+```bash
+# Stop existing containers
+docker-compose down
+
+# Rebuild backend only (faster if only backend changed)
+docker-compose build backend
+
+# Start all services
+docker-compose up -d
+
+# Verify successful startup
+docker-compose logs -f backend
+```
+
+### Method 2: Hot Update (Small Changes Only)
+
+For quick fixes without rebuilding:
+```bash
+# SSH to server
 ssh -i your-key.pem ubuntu@3.145.189.113
 
-# Edit the file
+# Edit file directly
 cd /path/to/uninest/backend
 vim app/routes/your_file.py
 
-# Restart backend container
+# Restart backend
 docker-compose restart backend
 ```
 
-### Method 3: CI/CD Automation (Recommended for Production)
+### Method 3: CI/CD Automation (Production)
 
-Create `.github/workflows/deploy.yml` in your project root:
-
+Create `.github/workflows/deploy.yml`:
 ```yaml
 name: Deploy to EC2
 
@@ -209,52 +285,300 @@ jobs:
             docker-compose up -d --build
 ```
 
-## Useful Command Reference
+---
 
-- Check running containers:
-  ```bash
-  docker-compose ps
-  ```
+## Command Reference
 
-- Check backend logs:
-  ```bash
-  docker-compose logs -f backend
-  ```
+### 🐳 Docker Commands
 
-- Restart only the backend (without rebuilding):
-  ```bash
-  docker-compose restart backend
-  ```
+**Container Management**
+```bash
+# Check running containers
+docker-compose ps
 
-- Fully rebuild and start:
-  ```bash
-  docker-compose down && docker-compose up -d --build
-  ```
+# Start all services
+docker-compose up -d
 
-- Enter the backend container for debugging:
-  ```bash
-  docker-compose exec backend bash
-  ```
+# Start with rebuild
+docker-compose up -d --build
 
-## Notes
+# Stop all services
+docker-compose down
 
-1. **Environment Variables:** Make sure the `.env` file on the server contains all necessary environment variables.
-2. **Database Migrations:** If you changed models, don’t forget to run migrations:
-   ```bash
-   docker-compose exec backend alembic upgrade head
-   ```
-3. **Ports:** Backend is running on port 8000, Frontend on port 80.
-4. **Health Check:** After deployment, visit [http://3.145.189.113:8000/docs](http://3.145.189.113:8000/docs) to confirm the API is working.
+# Restart specific service
+docker-compose restart backend
 
-## Your Server Information
+# Fully rebuild and restart
+docker-compose down && docker-compose up -d --build
+```
 
-- **EC2 IP:** 3.145.189.113
-- **Backend port:** 8000
-- **Frontend port:** 80
-- **Database:** PostgreSQL (in container) or RDS (production)
+**Logs and Debugging**
+```bash
+# View backend logs (real-time)
+docker-compose logs -f backend
 
-Do you already have your server's SSH private key? If so, I can help you write a deployment script to automate this process.
+# View all service logs
+docker-compose logs
 
+# View last 100 lines
+docker-compose logs --tail=100 backend
+
+# Enter backend container shell
+docker-compose exec backend bash
+
+# Enter database container
+docker-compose exec db psql -U uninest_admin -d uninest
+```
+
+---
+
+### 🗄️ Database Migration Commands
+
+```bash
+# Check current migration version
+docker-compose exec backend alembic current
+
+# View migration history
+docker-compose exec backend alembic history
+
+# Apply all pending migrations
+docker-compose exec backend alembic upgrade head
+
+# Apply specific migration
+docker-compose exec backend alembic upgrade e1a2b3c4d5e6
+
+# Create new migration (auto-generate from models)
+docker-compose exec backend alembic revision --autogenerate -m "description"
+
+# Rollback one migration
+docker-compose exec backend alembic downgrade -1
+
+# Check for schema issues
+docker-compose exec backend python -c "
+from app.database import SessionLocal
+from sqlalchemy import text
+db = SessionLocal()
+result = db.execute(text('SELECT version_num FROM alembic_version')).fetchone()
+print(f'Current migration: {result[0]}')
+db.close()
+"
+```
+
+---
+
+### 🏢 Property Data Management
+
+**Fetch Real Estate Data**
+```bash
+# Check system status
+curl "http://localhost:8000/api/v1/admin/status" \
+  -H "X-Admin-Key: Admin123456" | jq
+
+# Fetch properties (auto-creates landlords)
+curl -X POST "http://localhost:8000/api/v1/admin/fetch-real-properties?property_count=15" \
+  -H "X-Admin-Key: Admin123456" | jq
+
+# Fetch from multiple sources (comprehensive)
+curl -X POST "http://localhost:8000/api/v1/admin/fetch-multi-source-properties?property_count=50" \
+  -H "X-Admin-Key: Admin123456" | jq
+
+# Manual sync (scheduler logic)
+curl -X POST "http://localhost:8000/api/v1/admin/sync/manual?sync_type=incremental" \
+  -H "X-Admin-Key: Admin123456" | jq
+```
+
+**Verify Data**
+```bash
+# Check total properties
+curl "http://localhost:8000/api/v1/properties" | jq 'length'
+
+# Get specific property details
+curl "http://localhost:8000/api/v1/properties/1" | jq
+
+# View property description with links
+curl "http://localhost:8000/api/v1/properties/1" | jq '.description'
+
+# List all landlords
+curl "http://localhost:8000/api/v1/admin/landlords" \
+  -H "X-Admin-Key: Admin123456" | jq
+
+# List API-created landlords
+curl "http://localhost:8000/api/v1/admin/real-landlords" \
+  -H "X-Admin-Key: Admin123456" | jq
+```
+
+**Data Analytics**
+```bash
+# Property sources report
+curl "http://localhost:8000/api/v1/admin/property-sources" \
+  -H "X-Admin-Key: Admin123456" | jq
+
+# Property links report (Realtor.com, Zillow, etc.)
+curl "http://localhost:8000/api/v1/admin/property-links" \
+  -H "X-Admin-Key: Admin123456" | jq
+
+# Get detailed property information
+curl "http://localhost:8000/api/v1/admin/property-details/123" \
+  -H "X-Admin-Key: Admin123456" | jq
+```
+
+---
+
+### 🔍 BM25 Full-Text Search
+
+**Basic Search**
+```bash
+# Search for apartments
+curl "http://localhost:8000/api/v1/properties/search?q=apartment&limit=5" | jq
+
+# Multi-word search
+curl "http://localhost:8000/api/v1/properties/search?q=modern+2BR+near+campus" | jq
+
+# Search with minimum relevance score
+curl "http://localhost:8000/api/v1/properties/search?q=spacious&limit=10&min_score=0.1" | jq
+
+# Neighborhood search
+curl "http://localhost:8000/api/v1/properties/search?q=Squirrel+Hill" | jq
+```
+
+**Test BM25 Search (Python)**
+```bash
+# Run comprehensive BM25 test
+docker-compose exec backend python test_bm25.py
+
+# Quick search test
+docker-compose exec backend python -c "
+from app.database import SessionLocal
+from app.services.search_service import bm25_search_properties
+
+db = SessionLocal()
+results = bm25_search_properties(db, 'apartment', limit=5)
+for prop, score in results:
+    print(f'{prop.title} - Score: {score:.4f}')
+db.close()
+"
+```
+
+**Verify BM25 Components**
+```bash
+# Check search_vector column exists
+docker-compose exec backend python -c "
+from app.database import SessionLocal
+from sqlalchemy import text
+db = SessionLocal()
+result = db.execute(text('SELECT column_name FROM information_schema.columns WHERE table_name = \'properties\' AND column_name = \'search_vector\'')).fetchone()
+print('✅ search_vector exists!' if result else '❌ Column not found')
+db.close()
+"
+
+# Check GIN index
+docker-compose exec backend python -c "
+from app.database import SessionLocal
+from sqlalchemy import text
+db = SessionLocal()
+result = db.execute(text('SELECT indexname FROM pg_indexes WHERE tablename = \'properties\' AND indexname = \'idx_properties_search_vector\'')).fetchone()
+print('✅ GIN index exists!' if result else '❌ Index not found')
+db.close()
+"
+```
+
+---
+
+### 🧹 Database Maintenance
+
+```bash
+# Reset database (WARNING: deletes all data)
+curl -X DELETE "http://localhost:8000/api/v1/admin/reset-database?confirm=RESET_ALL_DATA" \
+  -H "X-Admin-Key: Admin123456" | jq
+
+# Clean up old properties (30+ days)
+curl -X DELETE "http://localhost:8000/api/v1/admin/cleanup-properties/1?older_than_days=30" \
+  -H "X-Admin-Key: Admin123456" | jq
+
+# Migrate API images to PropertyImage table
+curl -X POST "http://localhost:8000/api/v1/admin/migrate-images" \
+  -H "X-Admin-Key: Admin123456" | jq
+```
+
+---
+
+### 🔧 Development & Debugging
+
+**Health Checks**
+```bash
+# Check API is running
+curl http://localhost:8000/
+
+# Check API docs
+curl http://localhost:8000/docs
+
+# Verify database connection
+docker-compose exec backend python -c "
+from app.database import SessionLocal
+db = SessionLocal()
+print('✅ Database connected successfully')
+db.close()
+"
+```
+
+**Interactive Testing**
+```bash
+# Python shell in container
+docker-compose exec backend python
+
+# Run specific service test
+docker-compose exec backend python -c "
+from app.services.realtor16_fetcher import Realtor16Fetcher
+import os
+api_key = os.getenv('RAPIDAPI_KEY')
+print(f'API Key configured: {bool(api_key)}')
+"
+```
+
+---
+
+## Server Information
+
+- **EC2 IP**: 3.145.189.113
+- **Backend Port**: 8000
+- **Frontend Port**: 80
+- **Database**: PostgreSQL RDS (production) / Docker container (local)
+- **Admin Key**: Admin123456 (stored in `ADMIN_SECRET` env variable)
+
+**Endpoints:**
+- Local API: `http://localhost:8000`
+- Production API: `http://3.145.189.113:8000`
+- Local Docs: `http://localhost:8000/docs`
+- Production Docs: `http://3.145.189.113:8000/docs`
+
+---
+
+## Test Credentials
+
+**Default Test User:**
+```json
+{
+  "email": "test0@example.com",
+  "username": "testuser0",
+  "password": "String123",
+  "user_type": "tenant"
+}
+```
+
+**Admin Access:**
+- Header: `X-Admin-Key: Admin123456`
+- Required for: `/api/v1/admin/*` endpoints
+
+---
+
+## Important Notes
+
+1. **Environment Variables**: Ensure `.env` file contains all required variables on both local and server
+2. **Database Migrations**: Always run `alembic upgrade head` after model changes
+3. **Ports**: Backend (8000), Frontend (80), PostgreSQL (5432)
+4. **Health Check**: Visit `/docs` endpoint to verify API is running
+5. **BM25 Search**: Requires migration `e1a2b3c4d5e6` to be applied
+6. **API Rate Limits**: RapidAPI free tier has usage limits - monitor calls
 
 ## Contributors
 

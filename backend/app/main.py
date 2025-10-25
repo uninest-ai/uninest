@@ -37,11 +37,13 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost",          # Docker frontend
+        "http://localhost:80",       # Docker frontend with port
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://3.145.189.113",      # Add your EC2 frontend
-        "http://3.145.189.113:80"    # Alternative port
+        "http://3.145.189.113",      # EC2 frontend
+        "http://3.145.189.113:80"    # EC2 frontend with port
     ],
     allow_credentials=True,
     allow_methods=["*"],

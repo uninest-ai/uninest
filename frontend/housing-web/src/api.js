@@ -207,12 +207,38 @@ export const uploadPropertyImage = async (file, propertyId) => {
   return response.data;
 };
 
-// Chat with AI
+// Chat with AI (basic response only)
 export const sendMessageToChat = async (message) => {
   const token = getToken();
   if (!token) throw new Error("Authorization token is missing for sendMessageToChat.");
 
   const response = await api.post(`${API_PREFIX}/chat/message`, { message }, {
+    headers: {
+      Authorization: token,
+    },
+  });
+  return response.data;
+};
+
+// Chat with AI (full response with preferences)
+export const sendMessageToChatFull = async (message) => {
+  const token = getToken();
+  if (!token) throw new Error("Authorization token is missing for sendMessageToChatFull.");
+
+  const response = await api.post(`${API_PREFIX}/chat/message/full`, { message }, {
+    headers: {
+      Authorization: token,
+    },
+  });
+  return response.data;
+};
+
+// Get user preferences from chat
+export const getChatPreferences = async () => {
+  const token = getToken();
+  if (!token) throw new Error("Authorization token is missing for getChatPreferences.");
+
+  const response = await api.get(`${API_PREFIX}/chat/preferences`, {
     headers: {
       Authorization: token,
     },

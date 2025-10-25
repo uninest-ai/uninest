@@ -9,6 +9,7 @@ from app.schemas import PropertyCreate, PropertyResponse, PropertyUpdate
 from app.auth import get_current_user
 from app.services.storage_service import S3ImageService
 from app.services.image_analysis import SimpleImageAnalysisService
+from app.services.search_service import bm25_search_properties
 
 router = APIRouter()
 image_service = SimpleImageAnalysisService()
@@ -54,6 +55,67 @@ def get_properties(
     """Get all property listings with pagination"""
     properties = db.query(Property).offset(skip).limit(limit).all()
     return properties
+
+@router.get("/search", response_model=List[dict], summary="Search Properties with BM25")
+def search_properties(
+    q: str,
+    limit: int = 10,
+    min_score: float = 0.0,
+    db: Session = Depends(get_db)
+):
+    """
+    Search properties using BM25 full-text search on title and description.
+
+    Args:
+        q: Search query string (e.g., "modern apartment near campus")
+        limit: Maximum number of results to return (default: 10)
+        min_score: Minimum relevance score threshold (default: 0.0)
+
+    Returns:
+        List of properties with relevance scores, sorted by relevance
+
+    Example:
+        GET /api/v1/properties/search?q=spacious+apartment&limit=5
+    """
+    if not q or not q.strip():
+        raise HTTPException(status_code=400, detail="Search query 'q' parameter is required")
+
+    try:
+        # Perform BM25 search
+        results = bm25_search_properties(
+            db=db,
+            query=q.strip(),
+            limit=limit,
+            min_score=min_score
+        )
+
+        # Format results for API response
+        response = []
+        for property_obj, score in results:
+            # Convert property to dict and add score
+            property_dict = {
+                "id": property_obj.id,
+                "title": property_obj.title,
+                "description": property_obj.description,
+                "price": property_obj.price,
+                "address": property_obj.address,
+                "city": property_obj.city,
+                "latitude": property_obj.latitude,
+                "longitude": property_obj.longitude,
+                "amenities": property_obj.api_amenities,
+                "labels": property_obj.labels,
+                "image_url": property_obj.image_url,
+                "relevance_score": float(score)
+            }
+            response.append(property_dict)
+
+        return response
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Search failed: {str(e)}"
+        )
 
 @router.get("/{property_id}", response_model=PropertyResponse)
 def get_property(

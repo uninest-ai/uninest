@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { analyzeImage, sendMessageToChat, updateTenantProfile } from "../src/api";
+import { analyzeImage, sendMessageToChatFull, getChatPreferences, updateTenantProfile } from "../src/api";
 import { UserIcon } from '@heroicons/react/24/solid';
 
 const PreferencePage = () => {
@@ -23,6 +23,7 @@ const PreferencePage = () => {
   const [errorMessage, setErrorMessage] = useState(""); // error message state
   const [isImageLoading, setIsImageLoading] = useState(false); // image analysis loading state
   const [isChatLoading, setIsChatLoading] = useState(false); // chat response loading state
+  const [userPreferences, setUserPreferences] = useState([]); // user preferences from chat
 
   const navigate = useNavigate();
 
@@ -118,19 +119,25 @@ const PreferencePage = () => {
     try {
       setIsChatLoading(true);
       setErrorMessage("");
-      
+
       setChatMessages((prevMessages) => [
         ...prevMessages,
         { sender: "user", text: userMessage },
       ]);
 
-      const response = await sendMessageToChat(userMessage);
+      const response = await sendMessageToChatFull(userMessage);
       const aiResponse = response?.response || "Sorry, I couldn't process that.";
+      const preferences = response?.preferences || [];
 
       setChatMessages((prevMessages) => [
         ...prevMessages,
         { sender: "bot", text: aiResponse },
       ]);
+
+      // Update preferences if new ones are returned
+      if (preferences.length > 0) {
+        setUserPreferences(preferences);
+      }
 
       setUserMessage("");
     } catch (error) {
@@ -159,7 +166,7 @@ const PreferencePage = () => {
         />
       </div>
       <div className="form-group">
-        <label htmlFor="preferredLocation">Preferred Location</label>
+        <label htmlFor="preferredLocation">Preferred Location (Current version only applicable in Pittsburgh) </label>
         <select
           id="preferredLocation"
           className="form-control"
@@ -264,13 +271,15 @@ const PreferencePage = () => {
   const renderChat = () => (
     <div className="flex flex-col items-center justify-between h-screen bg-gray-100">
       {/* title and description */}
-      <div className="w-full max-w-2xl p-6">
+      <div className="w-full max-w-4xl p-6">
         <h1 className="mb-2 text-3xl font-bold">Preference,</h1>
         <p className="mb-4 text-gray-600">Talk about your preferences.</p>
       </div>
-  
-      {/* chat box */}
-      <div className="w-full max-w-2xl flex-1 p-6 bg-white rounded-lg shadow overflow-y-auto">
+
+      {/* Main content area with chat and preferences side by side */}
+      <div className="w-full max-w-4xl flex-1 flex gap-4 px-6">
+        {/* chat box */}
+        <div className="flex-1 p-6 bg-white rounded-lg shadow overflow-y-auto">
         {chatMessages.map((msg, index) => (
           <div
             key={index}
@@ -315,10 +324,33 @@ const PreferencePage = () => {
             </div>
           </div>
         )}
+        </div>
+
+        {/* Preferences panel */}
+        <div className="w-80 p-4 bg-white rounded-lg shadow overflow-y-auto">
+          <h3 className="text-lg font-semibold mb-3">Your Preferences</h3>
+          {userPreferences.length === 0 ? (
+            <p className="text-gray-500 text-sm">No preferences collected yet. Chat with the AI to discover your ideal home!</p>
+          ) : (
+            <div className="space-y-2">
+              {userPreferences.map((pref, index) => (
+                <div key={index} className="p-3 bg-gray-50 rounded border border-gray-200">
+                  <div className="font-medium text-sm text-gray-700">{pref.key}</div>
+                  <div className="text-sm text-gray-600 mt-1">{pref.value}</div>
+                  {pref.category && (
+                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
+                      {pref.category}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-  
+
       {/* input box and send button */}
-      <div className="w-full max-w-2xl p-6">
+      <div className="w-full max-w-4xl p-6">
         <div className="flex items-center">
           <input
             type="text"
@@ -348,7 +380,7 @@ const PreferencePage = () => {
       </div>
   
       {/* Next button */}
-      <div className="w-full max-w-2xl p-6">
+      <div className="w-full max-w-4xl p-6">
         <button
           className="w-full px-4 py-2 text-white bg-black rounded-lg hover:bg-gray-800"
           onClick={() => navigate("/recommendation")}

@@ -31,7 +31,15 @@ def authenticate_user(db: Session, email: str, password: str):
     Authenticate a user by email and password
     """
     user = db.query(User).filter(User.email == email).first()
-    if not user or not verify_password(password, user.password_hash):
+    if not user:
+        print(f"[AUTH DEBUG] User not found for email: {email}")
+        return False
+
+    print(f"[AUTH DEBUG] User found: {user.email}, checking password...")
+    password_valid = verify_password(password, user.password_hash)
+    print(f"[AUTH DEBUG] Password valid: {password_valid}")
+
+    if not password_valid:
         return False
     return user
 

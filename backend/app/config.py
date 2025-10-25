@@ -28,8 +28,17 @@ class Settings(BaseSettings):
     
     # Open AI API Key
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    
+
+    # Frontend and deployment settings
+    vite_api_base_url: Optional[str] = os.getenv("VITE_API_BASE_URL", "")
+    ec2_public_ip: Optional[str] = os.getenv("EC2_PUBLIC_IP", "")
+
+    # External API keys
+    rapidapi_key: Optional[str] = os.getenv("RAPIDAPI_KEY", "")
+    admin_secret: Optional[str] = os.getenv("ADMIN_SECRET", "")
+
     class Config:
         env_file = ".env"
+        extra = "ignore"  # Ignore extra fields from .env
 
 settings = Settings()

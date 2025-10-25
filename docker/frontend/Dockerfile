@@ -14,11 +14,18 @@ ENV VITE_GOOGLE_API_KEY=${VITE_GOOGLE_API_KEY}
 # Copy package files
 COPY frontend/housing-web/package*.json ./
 
-# Install dependencies
-RUN npm install
+# Clean install dependencies (without package-lock to avoid version conflicts)
+RUN npm install --legacy-peer-deps
 
-# Copy source code
-COPY frontend/housing-web/ ./
+# Copy source code (excluding node_modules)
+COPY frontend/housing-web/src ./src
+COPY frontend/housing-web/pages ./pages
+COPY frontend/housing-web/public ./public
+COPY frontend/housing-web/index.html ./
+COPY frontend/housing-web/vite.config.js ./
+COPY frontend/housing-web/tailwind.config.js ./
+COPY frontend/housing-web/postcss.config.js ./
+COPY frontend/housing-web/eslint.config.js ./
 
 # Build the app
 RUN npm run build
