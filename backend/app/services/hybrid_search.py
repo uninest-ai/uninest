@@ -104,28 +104,35 @@ def hybrid_search(
         min_score=min_bm25_score
     )
 
+    # If no BM25 results, we'll rely purely on vector search
     if not bm25_results:
-        logger.warning("No BM25 results found")
-        return []
-
-    bm25_ids = [prop_id for prop_id, _ in bm25_results]
-    logger.info(f"Found {len(bm25_ids)} BM25 candidates")
+        logger.warning("No BM25 results found - using vector search only")
+        bm25_results = []  # Empty list for RRF fusion
+        bm25_ids = []
+    else:
+        bm25_ids = [prop_id for prop_id, _ in bm25_results]
+        logger.info(f"Found {len(bm25_ids)} BM25 candidates")
 
     # Step 2: Vector Search within BM25 candidates (hybrid recall)
-    logger.info(f"Performing vector search on {len(bm25_ids)} BM25 candidates")
-    vector_results_filtered = embedding_service.vector_search(
-        db=db,
-        query_text=query.strip(),
-        limit=bm25_limit,  # Search within all BM25 results
-        property_ids=bm25_ids  # Restrict to BM25 candidates
-    )
+    # Only if we have BM25 candidates
+    if bm25_ids:
+        logger.info(f"Performing vector search on {len(bm25_ids)} BM25 candidates")
+        vector_results_filtered = embedding_service.vector_search(
+            db=db,
+            query_text=query.strip(),
+            limit=bm25_limit,  # Search within all BM25 results
+            property_ids=bm25_ids  # Restrict to BM25 candidates
+        )
+    else:
+        vector_results_filtered = []
 
     # Step 3: Global Vector Search (long-tail recall)
+    # Always perform this - it will return results even if BM25 failed
     logger.info(f"Performing global vector search with limit={vector_limit}")
     vector_results_global = embedding_service.vector_search(
         db=db,
         query_text=query.strip(),
-        limit=vector_limit,
+        limit=vector_limit if not bm25_ids else vector_limit,  # Use more results if BM25 failed
         property_ids=None  # Search entire database
     )
 
