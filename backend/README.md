@@ -538,6 +538,10 @@ print(f'API Key configured: {bool(api_key)}')
 ---
 
 ## Server Information
+连接command:
+```
+ssh -i ~/.ssh/uninest_mykey_new.pem ec2-user@3.145.189.113
+```
 
 - **EC2 IP**: 3.145.189.113
 - **Backend Port**: 8000

@@ -3,9 +3,9 @@ fastapi==0.109.0
 uvicorn==0.27.0.post1  # Used via command line
 
 # Database
-sqlalchemy==2.0.25
-alembic==1.13.1
-psycopg2-binary==2.9.9  # Used implicitly by SQLAlchemy
+sqlalchemy==2.0.36  # Updated for Python 3.13 compatibility
+alembic==1.14.0  # Updated for Python 3.13 compatibility
+psycopg2-binary>=2.9.9  # Used implicitly by SQLAlchemy
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0
@@ -16,8 +16,8 @@ python-multipart==0.0.9  # Used implicitly by FastAPI
 
 # Environment & Configuration
 python-dotenv==1.0.0
-pydantic==2.6.1
-pydantic-settings==2.1.0
+pydantic==2.10.3  # Updated for Python 3.13 compatibility
+pydantic-settings==2.6.1  # Updated for compatibility with pydantic 2.10
 email-validator==2.1.1  # Used implicitly by Pydantic EmailStr
 
 # AWS Integration
@@ -25,13 +25,13 @@ boto3==1.34.28
 
 # Data Processing
 numpy==1.26.4
-pandas==2.0.3
-scikit-learn==1.3.2
+pandas==2.2.3  # Updated for Python 3.13 compatibility (has pre-built wheels)
+scikit-learn==1.5.2  # Updated for Python 3.13 compatibility
 
 # Image Processing - MISSING PACKAGES NEEDED
 # Pillow==10.2.0  # UNUSED - No PIL/Image imports found
-opencv-python==4.8.0.74  # MISSING - cv2 used in floor_plan_analyzer.py
-scipy==1.11.0  # MISSING - Used in floor_plan_analyzer.py
+opencv-python==4.10.0.84  # MISSING - cv2 used in floor_plan_analyzer.py, updated for Python 3.13 compatibility
+scipy==1.14.1  # MISSING - Used in floor_plan_analyzer.py, updated for Python 3.13 compatibility
 
 # API & Documentation
 # httpx==0.27.0  # UNUSED - No imports found
