@@ -177,9 +177,11 @@ def hybrid_search(
             "bedrooms": prop.bedrooms,
             "bathrooms": prop.bathrooms,
             "property_type": prop.property_type,
+            "area": prop.area,
             "amenities": prop.api_amenities,
             "labels": prop.labels,
             "image_url": prop.image_url,
+            "api_images": prop.api_images,
             "scores": {
                 "hybrid_rrf": float(hybrid_score),
                 "bm25": float(bm25_score),

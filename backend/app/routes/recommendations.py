@@ -8,7 +8,7 @@ from app.models import User, Property, UserPreference, TenantProfile
 from app.auth import get_current_user
 from app import recommendations
 from app import schemas  # Add this import to fix the previous error
-from app.services.search_service import SearchService  # Import search service
+from app.services.hybrid_search import hybrid_search_simple  # Import hybrid search function
 
 router = APIRouter()  # This line was missing
 
@@ -56,13 +56,15 @@ def get_property_recommendations(
     search_query = " ".join(search_terms)
 
     # Use hybrid search to find properties
-    search_service = SearchService(db)
-    search_results = search_service.hybrid_search(query=search_query, limit=limit)
+    search_results = hybrid_search_simple(db=db, query=search_query, limit=limit)
 
     # Update recommendation relationships
     if search_results:
-        # Get top recommended properties from search results
-        top_properties = [result["property"] for result in search_results[:limit]]
+        # Get property IDs from search results
+        property_ids = [result["id"] for result in search_results]
+
+        # Fetch property objects for updating relationships
+        top_properties = db.query(Property).filter(Property.id.in_(property_ids)).all()
 
         # Clear existing recommendations
         tenant_profile.recommended_properties = []
@@ -72,24 +74,24 @@ def get_property_recommendations(
         tenant_profile.recommended_properties = top_properties
         db.commit()
 
-    # Build response
+    # Build response from hybrid search results
     return [
         {
-            "id": result["property"].id,
-            "title": result["property"].title,
-            "price": result["property"].price,
-            "description": result["property"].description,
-            "image_url": result["property"].image_url,
-            "api_images": result["property"].api_images,
-            "property_type": result["property"].property_type,
-            "bedrooms": result["property"].bedrooms,
-            "bathrooms": result["property"].bathrooms,
-            "area": result["property"].area,
-            "address": result["property"].address,
-            "city": result["property"].city,
-            "latitude": result["property"].latitude,
-            "longitude": result["property"].longitude,
-            "match_score": round(result["score"] * 100)  # Convert to percentage
+            "id": result["id"],
+            "title": result["title"],
+            "price": result["price"],
+            "description": result["description"],
+            "image_url": result.get("image_url"),
+            "api_images": result.get("api_images", []),
+            "property_type": result["property_type"],
+            "bedrooms": result["bedrooms"],
+            "bathrooms": result["bathrooms"],
+            "area": result.get("area", 0),
+            "address": result["address"],
+            "city": result["city"],
+            "latitude": result["latitude"],
+            "longitude": result["longitude"],
+            "match_score": round(result["scores"]["hybrid_rrf"] * 100)  # Convert to percentage
         }
         for result in search_results
     ]
