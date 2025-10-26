@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { hybridSearchProperties } from "../src/api";
 
 // dropdown filter component
 const DropdownFilter = ({ title, options, selectedOption, onSelect }) => {
@@ -60,23 +61,23 @@ const StarRating = ({ rating, reviewCount }) => {
 
 // property card component
 const PropertyCard = ({ property }) => {
+    // Get the first image URL or use a placeholder
+    const imageUrl = property.images && property.images.length > 0
+        ? property.images[0].url
+        : "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80";
+
     return (
         <div className="property-card">
             <div className="property-image-container">
-                <img src={property.image} alt={property.name} />
+                <img src={imageUrl} alt={property.title} />
                 <div className="property-price-tag">
                     ${property.price} / {property.bedrooms}b {property.bathrooms}b
                 </div>
             </div>
             <div className="property-info">
-                <h3>{property.name}</h3>
-                <StarRating rating={property.rating} reviewCount={property.reviewCount} />
-                <div className="user-review">
-                    <div className="user-avatar">
-                        <img src={property.userImage} alt="User" />
-                    </div>
-                    <p className="property-description">"{property.description}"</p>
-                </div>
+                <h3>{property.title}</h3>
+                <p className="property-address">{property.address}, {property.city}</p>
+                <p className="property-description">{property.description}</p>
             </div>
         </div>
     );
@@ -89,82 +90,62 @@ const HomePage = () => {
     const [peopleCount, setPeopleCount] = useState('Any');
     const [propertyType, setPropertyType] = useState('Any');
     const [roomCount, setRoomCount] = useState('Any');
-    
-    // property data
-    const [properties] = useState([
-        {
-            id: 1,
-            name: "Albion At Morrow Park",
-            price: "2800",
-            bedrooms: "3",
-            bathrooms: "2",
-            image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
-            rating: 4.3,
-            reviewCount: "92",
-            userImage: "https://randomuser.me/api/portraits/women/44.jpg",
-            description: "Fitness facilities are new, lots of bus stops downstairs."
-        },
-        {
-            id: 2,
-            name: "Albion At Morrow Park",
-            price: "2800",
-            bedrooms: "3",
-            bathrooms: "2",
-            image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
-            rating: 4.3,
-            reviewCount: "92",
-            userImage: "https://randomuser.me/api/portraits/women/44.jpg",
-            description: "Fitness facilities are new, lots of bus stops downstairs."
-        },
-        {
-            id: 3,
-            name: "Albion At Morrow Park",
-            price: "2800",
-            bedrooms: "3",
-            bathrooms: "2",
-            image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
-            rating: 4.3,
-            reviewCount: "92",
-            userImage: "https://randomuser.me/api/portraits/women/44.jpg",
-            description: "Fitness facilities are new, lots of bus stops downstairs."
-        },
-        {
-            id: 4,
-            name: "Albion At Morrow Park",
-            price: "2800",
-            bedrooms: "3",
-            bathrooms: "2",
-            image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
-            rating: 4.3,
-            reviewCount: "92",
-            userImage: "https://randomuser.me/api/portraits/women/44.jpg",
-            description: "Fitness facilities are new, lots of bus stops downstairs."
-        },
-        {
-            id: 5,
-            name: "Albion At Morrow Park",
-            price: "2800",
-            bedrooms: "3",
-            bathrooms: "2",
-            image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
-            rating: 4.3,
-            reviewCount: "92",
-            userImage: "https://randomuser.me/api/portraits/women/44.jpg",
-            description: "Fitness facilities are new, lots of bus stops downstairs."
-        },
-        {
-            id: 6,
-            name: "Albion At Morrow Park",
-            price: "2800",
-            bedrooms: "3",
-            bathrooms: "2",
-            image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
-            rating: 4.3,
-            reviewCount: "92",
-            userImage: "https://randomuser.me/api/portraits/women/44.jpg",
-            description: "Fitness facilities are new, lots of bus stops downstairs."
+
+    // search and property state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [properties, setProperties] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    // Handle search
+    const handleSearch = async () => {
+        if (!searchQuery.trim()) {
+            setError('Please enter a search term');
+            return;
         }
-    ]);
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const results = await hybridSearchProperties(searchQuery, 20);
+            setProperties(results);
+            if (results.length === 0) {
+                setError('No properties found');
+            }
+        } catch (err) {
+            console.error('Search error:', err);
+            setError('Failed to search properties. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handle Enter key in search input
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
+    // Load default properties on mount
+    useEffect(() => {
+        const loadDefaultProperties = async () => {
+            setLoading(true);
+            try {
+                // Search for "apartment" by default to show some results
+                const results = await hybridSearchProperties('apartment', 20);
+                setProperties(results);
+            } catch (err) {
+                console.error('Error loading properties:', err);
+                setError('Failed to load properties');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadDefaultProperties();
+    }, []);
 
     const navigateToLogin = () => {
         window.location.hash = "#login";
@@ -184,8 +165,14 @@ const HomePage = () => {
                     UniNest
                 </div>
                 <div className="search-bar">
-                    <input type="text" placeholder="Search..." />
-                    <button className="search-button">
+                    <input
+                        type="text"
+                        placeholder="Search properties..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                    />
+                    <button className="search-button" onClick={handleSearch}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -226,7 +213,25 @@ const HomePage = () => {
             </div>
             
             <div className="property-list">
-                {properties.map(property => 
+                {loading && (
+                    <div className="text-center py-8">
+                        <p>Loading properties...</p>
+                    </div>
+                )}
+
+                {error && !loading && (
+                    <div className="text-center py-8 text-red-600">
+                        <p>{error}</p>
+                    </div>
+                )}
+
+                {!loading && !error && properties.length === 0 && (
+                    <div className="text-center py-8">
+                        <p>No properties found. Try a different search term.</p>
+                    </div>
+                )}
+
+                {!loading && properties.length > 0 && properties.map(property =>
                     <PropertyCard key={property.id} property={property} />
                 )}
             </div>

@@ -520,5 +520,33 @@ export const getUserPreferences = async (category = null) => {
   return response.data;
 };
 
+// Search properties using BM25
+export const searchProperties = async (query, limit = 10) => {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) {
+    headers.Authorization = token;
+  }
+
+  const response = await api.get(`${API_PREFIX}/properties/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+    headers
+  });
+  return response.data;
+};
+
+// Hybrid search properties (BM25 + semantic search)
+export const hybridSearchProperties = async (query, limit = 10) => {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) {
+    headers.Authorization = token;
+  }
+
+  const response = await api.get(`${API_PREFIX}/properties/hybrid-search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+    headers
+  });
+  return response.data;
+};
+
 // Export all API functions
 export default api; // If other places need to use the configured axios instance directly
