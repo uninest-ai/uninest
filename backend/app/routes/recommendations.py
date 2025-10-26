@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict
+import logging
 
 from app.database import get_db
 from app.models import User, Property, UserPreference, TenantProfile
@@ -11,6 +12,7 @@ from app import schemas  # Add this import to fix the previous error
 from app.services.hybrid_search import hybrid_search_simple  # Import hybrid search function
 
 router = APIRouter()  # This line was missing
+logger = logging.getLogger(__name__)
 
 @router.get("/properties", response_model=List[schemas.PropertyRecommendation])
 def get_property_recommendations(
@@ -56,7 +58,9 @@ def get_property_recommendations(
     search_query = " ".join(search_terms)
 
     # Use hybrid search to find properties
+    logger.info(f"Performing hybrid search with query: {search_query}")
     search_results = hybrid_search_simple(db=db, query=search_query, limit=limit)
+    logger.info(f"Hybrid search returned {len(search_results)} results")
 
     # Update recommendation relationships
     if search_results:
