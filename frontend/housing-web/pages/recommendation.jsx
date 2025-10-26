@@ -188,7 +188,12 @@ const RecommendationPage = () => {
       {/* 顶部导航栏 */}
       <div className="fixed top-0 left-0 right-0 bg-white shadow z-50">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-          <h1 className="text-2xl font-bold text-black">UniNest</h1>
+          <h1
+            className="text-2xl font-bold text-black cursor-pointer hover:text-gray-700 transition-colors"
+            onClick={() => navigate("/recommendation")}
+          >
+            UniNest
+          </h1>
           <div className="flex items-center gap-4">
             <button
               onClick={handleRoommateMatchClick}
