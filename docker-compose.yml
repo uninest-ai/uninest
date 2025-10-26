@@ -13,6 +13,7 @@ services:
     environment:
       # Use local database instead of RDS
       - DATABASE_URL=postgresql://uninest_admin:UniNest070809@db:5432/uninest
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
