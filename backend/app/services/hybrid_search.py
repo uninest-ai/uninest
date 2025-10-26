@@ -100,9 +100,21 @@ def hybrid_search(
     bm25_results = bm25_search_properties_ids_only(
         db=db,
         query=query.strip(),
-        limit=bm25_limit,
+        limit=bm25_limit * 2,  # Get more candidates to filter for quality
         min_score=min_bm25_score
     )
+
+    # Filter for quality properties (must have coordinates)
+    if bm25_results:
+        quality_property_ids = db.query(Property.id).filter(
+            Property.id.in_([pid for pid, _ in bm25_results]),
+            Property.latitude.isnot(None),
+            Property.longitude.isnot(None),
+            Property.is_active == True
+        ).all()
+        quality_ids = {pid for (pid,) in quality_property_ids}
+        bm25_results = [(pid, score) for pid, score in bm25_results if pid in quality_ids][:bm25_limit]
+        logger.info(f"Filtered to {len(bm25_results)} quality properties with coordinates")
 
     # If no BM25 results, we'll rely purely on vector search
     if not bm25_results:

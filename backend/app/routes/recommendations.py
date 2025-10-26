@@ -37,25 +37,45 @@ def get_property_recommendations(
         UserPreference.user_id == current_user.id
     ).all()
 
-    # Build search query from user preferences
+    # Build simplified search query from user preferences
     search_terms = []
 
-    # Add tenant profile information
+    # Priority 1: Location (most important for matching)
     if tenant_profile.preferred_location:
         search_terms.append(tenant_profile.preferred_location)
 
-    # Add preference values as search terms
+    # Priority 2: Property type from preferences (limit to 1-2 key terms)
+    property_type_keywords = ["apartment", "house", "condo", "townhouse"]
     for pref in user_preferences:
-        # Use preference value as search term
         if pref.preference_value and pref.preference_value.strip():
-            search_terms.append(pref.preference_value)
+            value = pref.preference_value.lower()
+            # Only add property type keywords
+            for keyword in property_type_keywords:
+                if keyword in value and keyword not in search_terms:
+                    search_terms.append(keyword)
+                    break
 
-    # If no preferences, use default search
+    # Priority 3: Add max 2-3 important preference keywords (not property types)
+    important_keywords = []
+    for pref in user_preferences:
+        if pref.preference_value and len(important_keywords) < 3:
+            value = pref.preference_value.strip().lower()
+            # Skip property types and very long phrases
+            if value not in property_type_keywords and len(value.split()) <= 2:
+                important_keywords.append(value)
+
+    search_terms.extend(important_keywords)
+
+    # If no preferences, use default
     if not search_terms:
         search_terms = ["apartment", "house"]
 
+    # Limit to top 5 terms max for better matching
+    search_terms = search_terms[:5]
+
     # Combine search terms into a query
     search_query = " ".join(search_terms)
+    logger.info(f"Simplified search query from {len(user_preferences)} preferences: {search_query}")
 
     # Use hybrid search to find properties
     logger.info(f"Performing hybrid search with query: {search_query}")
