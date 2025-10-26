@@ -12,6 +12,7 @@ from app.services.rapidapi_fetcher import RapidAPIFetcher
 from app.services.realtor16_fetcher import Realtor16Fetcher
 from app.services.multi_source_fetcher import MultiSourceFetcher
 from app.services.sync_scheduler import get_scheduler_status, manual_sync, start_property_sync, stop_property_sync
+from app.services.embedding_scheduler import update_embeddings_for_new_properties
 
 router = APIRouter()
 
@@ -1050,4 +1051,29 @@ async def migrate_api_images_to_property_images(
         raise HTTPException(
             status_code=500,
             detail=f"Error during image migration: {str(e)}"
+        )
+
+@router.post("/admin/update-embeddings")
+async def update_property_embeddings(
+    admin_verified: bool = Depends(verify_admin_key)
+):
+    """
+    Update embeddings for properties that don't have them yet.
+
+    This endpoint automatically:
+    1. Finds properties without embeddings
+    2. Generates vector embeddings using sentence-transformers
+    3. Stores them in the database for hybrid search
+
+    Usage:
+    curl -X POST "http://localhost:8000/api/v1/admin/update-embeddings" \
+      -H "X-Admin-Key: Admin123456" | jq
+    """
+    try:
+        result = update_embeddings_for_new_properties()
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error updating embeddings: {str(e)}"
         )

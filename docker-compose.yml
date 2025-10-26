@@ -7,6 +7,9 @@ services:
       dockerfile: docker/backend/Dockerfile # Dockerfile 的路径
     ports:
       - "8000:8000"
+    volumes:
+      # Cache sentence-transformers models to avoid re-downloading
+      - sentence_transformers_cache:/root/.cache/torch/sentence_transformers
     environment:
       # Use local database instead of RDS
       - DATABASE_URL=postgresql://uninest_admin:UniNest070809@db:5432/uninest
@@ -51,3 +54,4 @@ services:
 
 volumes:
   postgres_data:
+  sentence_transformers_cache:

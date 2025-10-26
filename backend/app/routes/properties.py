@@ -10,6 +10,7 @@ from app.auth import get_current_user
 from app.services.storage_service import S3ImageService
 from app.services.image_analysis import SimpleImageAnalysisService
 from app.services.search_service import bm25_search_properties
+from app.services.hybrid_search import hybrid_search_simple
 
 router = APIRouter()
 image_service = SimpleImageAnalysisService()
@@ -115,6 +116,62 @@ def search_properties(
         raise HTTPException(
             status_code=500,
             detail=f"Search failed: {str(e)}"
+        )
+
+@router.get("/hybrid-search", response_model=List[dict], summary="Hybrid Search with BM25 + Vector Embeddings")
+def hybrid_search_properties(
+    q: str,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    """
+    Advanced hybrid search combining BM25 text search and vector semantic search.
+
+    This endpoint uses Reciprocal Rank Fusion (RRF) to merge:
+    - BM25 keyword matching (fast, good for exact terms)
+    - Vector semantic search (understands meaning and context)
+
+    Args:
+        q: Search query string (e.g., "cozy apartment near university")
+        limit: Maximum number of results to return (default: 10)
+
+    Returns:
+        List of properties with hybrid scores and individual BM25/vector scores
+
+    Example:
+        GET /api/v1/properties/hybrid-search?q=modern+2BR+near+campus&limit=5
+
+    Note:
+        Requires embeddings to be precomputed. Run:
+        docker-compose exec backend python scripts/precompute_embeddings.py
+    """
+    if not q or not q.strip():
+        raise HTTPException(status_code=400, detail="Search query 'q' parameter is required")
+
+    try:
+        # Perform hybrid search
+        results = hybrid_search_simple(
+            db=db,
+            query=q.strip(),
+            limit=limit
+        )
+
+        if not results:
+            return []
+
+        return results
+
+    except Exception as e:
+        # Check if it's an embedding-related error
+        error_msg = str(e)
+        if "property_embeddings" in error_msg.lower() or "embedding" in error_msg.lower():
+            raise HTTPException(
+                status_code=503,
+                detail="Embeddings not available. Please run: docker-compose exec backend python scripts/precompute_embeddings.py"
+            )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Hybrid search failed: {str(e)}"
         )
 
 @router.get("/{property_id}", response_model=PropertyResponse)
