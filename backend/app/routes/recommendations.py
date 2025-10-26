@@ -8,6 +8,7 @@ from app.models import User, Property, UserPreference, TenantProfile
 from app.auth import get_current_user
 from app import recommendations
 from app import schemas  # Add this import to fix the previous error
+from app.services.search_service import SearchService  # Import search service
 
 router = APIRouter()  # This line was missing
 
@@ -17,56 +18,80 @@ def get_property_recommendations(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Based on user preferences, recommend properties"""
+    """Based on user preferences, recommend properties using hybrid search"""
     if current_user.user_type != "tenant":
         raise HTTPException(status_code=403, detail="Only tenants can receive property recommendations")
-    
+
     # Get user tenant profile
     tenant_profile = db.query(TenantProfile).filter(
         TenantProfile.user_id == current_user.id
     ).first()
-    
+
     if not tenant_profile:
         raise HTTPException(status_code=404, detail="Tenant profile not found")
-    
-    # Use recommendation engine to get recommendations
-    property_recommendations = recommendations.get_property_recommendations_for_user(
-        db, current_user.id, limit
-    )
-    
+
+    # Get user preferences
+    user_preferences = db.query(UserPreference).filter(
+        UserPreference.user_id == current_user.id
+    ).all()
+
+    # Build search query from user preferences
+    search_terms = []
+
+    # Add tenant profile information
+    if tenant_profile.preferred_location:
+        search_terms.append(tenant_profile.preferred_location)
+
+    # Add preference values as search terms
+    for pref in user_preferences:
+        # Use preference value as search term
+        if pref.preference_value and pref.preference_value.strip():
+            search_terms.append(pref.preference_value)
+
+    # If no preferences, use default search
+    if not search_terms:
+        search_terms = ["apartment", "house"]
+
+    # Combine search terms into a query
+    search_query = " ".join(search_terms)
+
+    # Use hybrid search to find properties
+    search_service = SearchService(db)
+    search_results = search_service.hybrid_search(query=search_query, limit=limit)
+
     # Update recommendation relationships
-    if property_recommendations:
-        # Get top recommended properties up to the limit
-        top_properties = [rec[0] for rec in property_recommendations[:limit]]
-        
+    if search_results:
+        # Get top recommended properties from search results
+        top_properties = [result["property"] for result in search_results[:limit]]
+
         # Clear existing recommendations
         tenant_profile.recommended_properties = []
         db.flush()
-        
+
         # Add new recommendations
         tenant_profile.recommended_properties = top_properties
         db.commit()
-    
+
     # Build response
     return [
         {
-            "id": p[0].id,
-            "title": p[0].title,
-            "price": p[0].price,
-            "description": p[0].description,
-            "image_url": p[0].image_url,
-            "api_images": p[0].api_images,  # Include api_images for fallback
-            "property_type": p[0].property_type,
-            "bedrooms": p[0].bedrooms,
-            "bathrooms": p[0].bathrooms,
-            "area": p[0].area,
-            "address": p[0].address,
-            "city": p[0].city,
-            "latitude": p[0].latitude,
-            "longitude": p[0].longitude,
-            "match_score": round(p[1] * 100)  # Convert to percentage
+            "id": result["property"].id,
+            "title": result["property"].title,
+            "price": result["property"].price,
+            "description": result["property"].description,
+            "image_url": result["property"].image_url,
+            "api_images": result["property"].api_images,
+            "property_type": result["property"].property_type,
+            "bedrooms": result["property"].bedrooms,
+            "bathrooms": result["property"].bathrooms,
+            "area": result["property"].area,
+            "address": result["property"].address,
+            "city": result["property"].city,
+            "latitude": result["property"].latitude,
+            "longitude": result["property"].longitude,
+            "match_score": round(result["score"] * 100)  # Convert to percentage
         }
-        for p in property_recommendations
+        for result in search_results
     ]
 
 @router.get("/roommates", response_model=List[schemas.RoommateRecommendation])
