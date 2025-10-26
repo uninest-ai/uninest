@@ -28,8 +28,8 @@ numpy==1.26.4
 pandas==2.2.3  # Updated for Python 3.13 compatibility (has pre-built wheels)
 scikit-learn==1.5.2  # Updated for Python 3.13 compatibility
 
-# Image Processing - NOT NEEDED (floor_plan_analyzer.py doesn't exist)
-# Pillow==10.2.0  # UNUSED - No PIL/Image imports found
+# Image Processing
+Pillow==10.2.0  # Required for Gemini image analysis
 # opencv-python==4.10.0.84  # UNUSED - floor_plan_analyzer.py doesn't exist, causes OOM on small instances
 # scipy==1.14.1  # UNUSED - floor_plan_analyzer.py doesn't exist
 
@@ -37,8 +37,9 @@ scikit-learn==1.5.2  # Updated for Python 3.13 compatibility
 # httpx==0.27.0  # UNUSED - No imports found
 # structlog==23.1.0  # UNUSED - No imports found
 
-# OpenAI Integration
-openai>=1.30.0
+# AI Integration
+# openai>=1.30.0  # OPTIONAL - Expensive, replaced by Gemini
+google-generativeai==0.3.2  # Gemini API - cheap and powerful for image analysis
 
 # Web Server
 gunicorn==21.2.0  # Used via command line

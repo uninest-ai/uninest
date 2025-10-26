@@ -26,8 +26,9 @@ class Settings(BaseSettings):
     # API settings
     API_V1_STR: str = "/api/v1"
     
-    # Open AI API Key
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    # AI API Keys
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY", "")  # Optional - expensive
+    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY", "")  # Recommended - cheap & powerful
 
     # Frontend and deployment settings
     vite_api_base_url: Optional[str] = os.getenv("VITE_API_BASE_URL", "")

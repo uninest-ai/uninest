@@ -2,84 +2,85 @@ import base64
 import json
 import re
 from typing import Dict, Any, List
-from openai import OpenAI
+import google.generativeai as genai
 from app.config import settings
 
 class SimpleImageAnalysisService:
     def __init__(self):
-        self.api_key = settings.OPENAI_API_KEY
-        try:
-            self.client = OpenAI(api_key=self.api_key)
-            print("OpenAI client initialized successfully")
-        except Exception as e:
-            print(f"Warning: OpenAI client initialization failed: {e}")
+        # Try Gemini first (cheaper), fallback to OpenAI if needed
+        self.gemini_key = getattr(settings, 'GEMINI_API_KEY', None)
+        self.openai_key = getattr(settings, 'OPENAI_API_KEY', None)
+
+        if self.gemini_key:
+            try:
+                genai.configure(api_key=self.gemini_key)
+                self.client = genai.GenerativeModel('gemini-1.5-flash')
+                self.client_type = "gemini"
+                print("Gemini client initialized successfully (cost-effective!)")
+            except Exception as e:
+                print(f"Warning: Gemini client initialization failed: {e}")
+                self.client = None
+                self.client_type = None
+        else:
+            print("No GEMINI_API_KEY found, image analysis unavailable")
             self.client = None
+            self.client_type = None
     
     def _extract_features(self, image_bytes: bytes, analysis_type: str) -> Dict[str, Any]:
         """
-        Extract features from an image using OpenAI Vision API
-        
+        Extract features from an image using Gemini Vision API
+
         Args:
             image_bytes: Image data in bytes
             analysis_type: 'tenant_preference' or 'property_listing'
-        
+
         Returns:
             Dictionary of extracted features
         """
         if self.client is None:
-            return {"error": "OpenAI client not available"}
-            
-        # Encode image to base64
-        base64_image = base64.b64encode(image_bytes).decode('utf-8')
-        
+            return {"error": "AI client not available"}
+
         # Customize prompt based on analysis type
         if analysis_type == 'tenant_preference':
             prompt = (
                 "Analyze this image of an ideal home. Identify key characteristics "
-                "that represent the tenant's preferences. Return a JSON with the following "
-                "structure: {"
-                "'architectural_style': {'value': '...', 'confidence': 0-1}, "
-                "'space_feeling': {'value': '...', 'confidence': 0-1}, "
-                "'key_features': [{'name': '...', 'confidence': 0-1}, ...], "
-                "'mood': {'value': '...', 'confidence': 0-1}"
-                "}"
+                "that represent the tenant's preferences. Return ONLY a valid JSON (no markdown, no ```json```) with this structure: "
+                "{'architectural_style': {'value': '...', 'confidence': 0.8}, "
+                "'space_feeling': {'value': '...', 'confidence': 0.8}, "
+                "'key_features': [{'name': '...', 'confidence': 0.8}], "
+                "'mood': {'value': '...', 'confidence': 0.8}}"
             )
         else:  # property_listing
             prompt = (
-                "Analyze this property image. Identify detailed characteristics "
-                "of the property. Return a JSON with the following structure: {"
-                "'property_type': {'value': '...', 'confidence': 0-1}, "
-                "'architectural_style': {'value': '...', 'confidence': 0-1}, "
-                "'key_features': [{'name': '...', 'confidence': 0-1}, ...], "
-                "'condition': {'value': '...', 'confidence': 0-1}, "
-                "'potential_appeal': {'value': '...', 'confidence': 0-1}"
-                "}"
+                "Analyze this property image. Identify detailed characteristics. "
+                "Return ONLY a valid JSON (no markdown, no ```json```) with this structure: "
+                "{'property_type': {'value': '...', 'confidence': 0.8}, "
+                "'architectural_style': {'value': '...', 'confidence': 0.8}, "
+                "'key_features': [{'name': '...', 'confidence': 0.8}], "
+                "'condition': {'value': '...', 'confidence': 0.8}, "
+                "'potential_appeal': {'value': '...', 'confidence': 0.8}}"
             )
-        
+
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{base64_image}"
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens=300
-            )
-            
+            # Use Gemini API
+            import PIL.Image
+            import io
+
+            # Convert bytes to PIL Image for Gemini
+            image = PIL.Image.open(io.BytesIO(image_bytes))
+
+            # Generate content with Gemini
+            response = self.client.generate_content([prompt, image])
+
             # Extract content
-            content = response.choices[0].message.content
-            
-            # Extract JSON 
+            content = response.text
+
+            # Remove markdown code blocks if present
+            content = re.sub(r'```json\s*', '', content)
+            content = re.sub(r'```\s*', '', content)
+            content = content.strip()
+
+            # Extract JSON
             json_match = re.search(r'\{.*\}', content, re.DOTALL | re.MULTILINE)
             if json_match:
                 try:
@@ -88,21 +89,22 @@ class SimpleImageAnalysisService:
                         "status": "success",
                         "features": self._normalize_features(features)
                     }
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as e:
                     return {
                         "status": "error",
-                        "message": "Could not parse JSON from response"
+                        "message": f"Could not parse JSON from response: {str(e)}"
                     }
-            
+
             return {
                 "status": "error",
-                "message": "No JSON found in response"
+                "message": "No JSON found in response",
+                "raw_response": content[:200]  # First 200 chars for debugging
             }
-        
+
         except Exception as e:
             return {
                 "status": "error",
-                "message": str(e)
+                "message": f"Gemini API error: {str(e)}"
             }
     
     def _normalize_features(self, features: Dict[str, Any]) -> List[Dict[str, Any]]:
