@@ -56,8 +56,9 @@ schedule==1.2.0
 requests==2.31.0
 
 # Machine Learning & Embeddings
-# Note: PyTorch CPU version installed separately in Dockerfile (see docker/backend/Dockerfile)
-# This avoids the large CUDA dependencies (~700MB smaller)
-sentence-transformers==2.7.0  # For vector embeddings and semantic search
+# Install PyTorch CPU-only first to avoid large CUDA version:
+#   pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu
+# Then install sentence-transformers
+sentence-transformers==2.7.0  # For vector embeddings and semantic search (requires PyTorch)
 # accelerate>=0.20.0  # UNUSED - No imports found
 
