@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services.multi_source_fetcher import MultiSourceFetcher
 from app.services.realtor16_fetcher import Realtor16Fetcher
+from app.services.embedding_scheduler import update_embeddings_for_new_properties
 from app.models import Property, LandlordProfile
 
 # Configure logging
@@ -95,9 +96,15 @@ class PropertySyncScheduler:
             
             if result['success']:
                 logger.info(f"Comprehensive sync completed: {result.get('saved_count', 0)} properties saved from {len(result.get('api_sources_used', []))} sources")
-                
+
                 # Log statistics
                 self._log_sync_stats(result, "comprehensive")
+
+                # Auto-generate embeddings for new properties
+                if result.get('saved_count', 0) > 0:
+                    logger.info("Generating embeddings for newly fetched properties...")
+                    embedding_result = update_embeddings_for_new_properties()
+                    logger.info(f"Embeddings: {embedding_result.get('created', 0)} created, {embedding_result.get('errors', 0)} errors")
             else:
                 logger.error(f"Comprehensive sync failed: {result.get('errors', [])}")
                 
@@ -128,9 +135,15 @@ class PropertySyncScheduler:
             
             if result['success']:
                 logger.info(f"Incremental sync completed: {result.get('saved_count', 0)} properties saved")
-                
+
                 # Log statistics
                 self._log_sync_stats(result, "incremental")
+
+                # Auto-generate embeddings for new properties
+                if result.get('saved_count', 0) > 0:
+                    logger.info("Generating embeddings for newly fetched properties...")
+                    embedding_result = update_embeddings_for_new_properties()
+                    logger.info(f"Embeddings: {embedding_result.get('created', 0)} created, {embedding_result.get('errors', 0)} errors")
             else:
                 logger.warning(f"Incremental sync had issues: {result.get('error', 'Unknown error')}")
                 
