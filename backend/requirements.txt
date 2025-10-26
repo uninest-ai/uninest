@@ -28,10 +28,10 @@ numpy==1.26.4
 pandas==2.2.3  # Updated for Python 3.13 compatibility (has pre-built wheels)
 scikit-learn==1.5.2  # Updated for Python 3.13 compatibility
 
-# Image Processing - MISSING PACKAGES NEEDED
+# Image Processing - NOT NEEDED (floor_plan_analyzer.py doesn't exist)
 # Pillow==10.2.0  # UNUSED - No PIL/Image imports found
-opencv-python==4.10.0.84  # MISSING - cv2 used in floor_plan_analyzer.py, updated for Python 3.13 compatibility
-scipy==1.14.1  # MISSING - Used in floor_plan_analyzer.py, updated for Python 3.13 compatibility
+# opencv-python==4.10.0.84  # UNUSED - floor_plan_analyzer.py doesn't exist, causes OOM on small instances
+# scipy==1.14.1  # UNUSED - floor_plan_analyzer.py doesn't exist
 
 # API & Documentation
 # httpx==0.27.0  # UNUSED - No imports found
