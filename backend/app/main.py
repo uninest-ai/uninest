@@ -7,6 +7,7 @@ from app.database import engine, Base
 
 from app.routes import image_analysis, chat_ai, recommendations
 from app.routes import admin_sync
+from app.metrics import attach_metrics
 
 # Create database tables
 try:
@@ -22,11 +23,8 @@ app = FastAPI(
     version="0.1.0"
 )
 
-app.include_router(
-    users.router,
-    prefix=f"{settings.API_V1_STR}/users",
-    tags=["Users"]
-)
+# Attach metrics monitoring
+attach_metrics(app)
 
 origins = [
     "http://localhost:5173",

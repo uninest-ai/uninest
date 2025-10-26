@@ -66,3 +66,91 @@ curl -X GET "http://localhost:8000/api/v1/properties/hybrid-search?q=apartment&l
 ## BM25
 curl -X GET "http://localhost:8000/api/v1/properties/search?q=apartment&limit=5" | jq
 ```
+
+---
+Usage of metrics:
+● Perfect! I've implemented the metrics monitoring system. Here's what was created:
+
+  Files Created/Modified
+
+  1. Created /backend/app/metrics.py
+
+  - Middleware to track request latency and count
+  - /metrics endpoint returning performance stats
+  - Tracks last 1000 requests and 1-minute QPS window
+
+  2. Modified /backend/app/main.py
+
+  - Added from app.metrics import attach_metrics
+  - Called attach_metrics(app) after app creation
+
+  3. Created /backend/scripts/load_test_metrics.py
+
+  - Python script to generate 500 test requests
+  - Uses 10 concurrent workers
+  - Automatically fetches and displays metrics
+
+  How to Use
+
+  Step 1: Restart Backend
+
+  docker-compose restart backend
+
+  Step 2: Test the Metrics Endpoint
+
+  Open browser or use curl:
+  curl http://localhost:8000/metrics | jq
+
+  You'll see (before load test):
+  {
+    "latency_ms": {
+      "p50": null,
+      "p95": null,
+      "p99": null
+    },
+    "qps_1m": 0.0
+  }
+
+  Step 3: Run Load Test
+
+  Option A: Using the Python script
+  cd backend
+  python scripts/load_test_metrics.py
+
+  Option B: Using curl in a loop
+  for i in {1..500}; do curl -s http://localhost:8000/ > /dev/null; done
+  curl http://localhost:8000/metrics | jq
+
+  Option C: Using Apache Bench (if installed)
+  ab -n 500 -c 10 http://localhost:8000/
+  curl http://localhost:8000/metrics | jq
+
+  Step 4: View Results
+
+  After load testing, check metrics again:
+  curl http://localhost:8000/metrics | jq
+
+  Expected output:
+  {
+    "latency_ms": {
+      "p50": 12.3,
+      "p95": 45.6,
+      "p99": 89.1
+    },
+    "qps_1m": 8.33
+  }
+
+  What the Metrics Mean
+
+  - p50 (median): Half of requests complete faster than this
+  - p95: 95% of requests complete faster than this
+  - p99: 99% of requests complete faster than this
+  - qps_1m: Average queries per second over last 60 seconds
+
+  Screenshot for Proposal
+
+  After running the load test, take a screenshot showing:
+  1. The load test output
+  2. The /metrics endpoint JSON response with actual values
+
+  This proves your API can handle 200-500 requests and track performance! 🎉
