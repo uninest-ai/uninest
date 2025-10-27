@@ -30,31 +30,32 @@ from app.models import Property
 
 
 # Test queries with expected relevant property characteristics
+# Realistic user queries with detailed preferences and price constraints
 TEST_QUERIES = [
     {
-        "query": "Oakland apartment",
-        "expected_keywords": ["Oakland", "apartment"],
-        "description": "Location-focused search"
+        "query": "Oakland apartment two-car garage well-maintained landscaping quiet, target_price: 1000.0",
+        "expected_keywords": ["Oakland", "apartment", "garage", "quiet"],
+        "description": "Location + amenities + atmosphere with price constraint"
     },
     {
-        "query": "Shadyside modern",
-        "expected_keywords": ["Shadyside", "modern"],
-        "description": "Location + style"
+        "query": "Shadyside modern studio hardwood floors natural light near CMU, target_price: 1200.0",
+        "expected_keywords": ["Shadyside", "modern", "studio", "hardwood"],
+        "description": "Location + style + features with price constraint"
     },
     {
-        "query": "apartment parking laundry",
-        "expected_keywords": ["apartment", "parking", "laundry"],
-        "description": "Amenity-focused search"
+        "query": "Squirrel Hill 2-bedroom apartment parking laundry in-unit pet-friendly, target_price: 1500.0",
+        "expected_keywords": ["Squirrel Hill", "apartment", "parking", "laundry", "pet"],
+        "description": "Location + size + amenities + pet-friendly with price constraint"
     },
     {
-        "query": "Squirrel Hill quiet",
-        "expected_keywords": ["Squirrel Hill", "quiet"],
-        "description": "Location + atmosphere"
+        "query": "Pittsburgh house backyard quiet neighborhood good schools family-friendly, target_price: 2000.0",
+        "expected_keywords": ["house", "backyard", "quiet", "family"],
+        "description": "Property type + features + family needs with price constraint"
     },
     {
-        "query": "house backyard",
-        "expected_keywords": ["house", "backyard"],
-        "description": "Property type + feature"
+        "query": "Oakland walking distance CMU furnished utilities included student housing, target_price: 800.0",
+        "expected_keywords": ["Oakland", "CMU", "furnished", "utilities", "student"],
+        "description": "Student-focused search with location and budget constraint"
     },
 ]
 
@@ -298,7 +299,7 @@ def run_recall_benchmark(db: Session, test_queries: List[Dict], method: str = "h
 
     for query_info in test_queries:
         query = query_info["query"]
-        print(f"   Testing: '{query}'")
+        print(f"\n   Testing: '{query}'")
 
         # Get ground truth relevant properties
         relevant_ids = get_ground_truth_relevant_properties(db, query_info)
@@ -327,6 +328,35 @@ def run_recall_benchmark(db: Session, test_queries: List[Dict], method: str = "h
         })
 
         print(f"      Recall@10: {recall:.3f} | Precision@10: {precision:.3f} ({len(retrieved_ids)} retrieved, {len(relevant_ids)} relevant)")
+
+        # Show sample properties that participate in the search
+        if retrieved_ids:
+            print(f"\n      📋 Sample Retrieved Properties (top 3):")
+            sample_props = db.query(Property).filter(Property.id.in_(retrieved_ids[:3])).all()
+            for i, prop in enumerate(sample_props, 1):
+                print(f"\n         [{i}] Property ID: {prop.id}")
+                print(f"             Title: {prop.title[:80] if prop.title else 'N/A'}...")
+                print(f"             Address: {prop.address or 'N/A'}, {prop.city or 'N/A'}")
+                print(f"             Price: ${prop.price}/mo | Type: {prop.property_type or 'N/A'}")
+
+                # Show searchable text (what BM25 uses)
+                print(f"             📝 Searchable Text (BM25):")
+                if prop.description:
+                    print(f"                Description: {prop.description[:100]}...")
+                if prop.extended_description:
+                    print(f"                AI Keywords: {prop.extended_description[:100]}...")
+
+                # Show amenities and labels (additional context)
+                if prop.api_amenities:
+                    amenities = prop.api_amenities if isinstance(prop.api_amenities, list) else []
+                    print(f"             🏷️  Amenities: {', '.join(amenities[:5])}")
+                if prop.labels:
+                    labels = prop.labels if isinstance(prop.labels, list) else []
+                    print(f"             🔖 Image Labels: {', '.join(str(l) for l in labels[:5])}")
+
+                # Show embedding status (for vector search)
+                has_embedding = hasattr(prop, 'embedding') and prop.embedding is not None
+                print(f"             🔢 Vector Embedding: {'✅ Present' if has_embedding else '❌ Missing'}")
 
     avg_recall = statistics.mean(recall_scores) if recall_scores else 0.0
     avg_precision = statistics.mean(precision_scores) if precision_scores else 0.0
