@@ -1066,7 +1066,7 @@ async def update_property_embeddings(
     3. Stores them in the database for hybrid search
 
     Usage:
-    curl -X POST "http://localhost:8000/api/v1/admin/update-embeddings" \
+    curl -X POST "http://3.145.189.113:8000/api/v1/admin/update-embeddings" \
       -H "X-Admin-Key: Admin123456" | jq
     """
     try:

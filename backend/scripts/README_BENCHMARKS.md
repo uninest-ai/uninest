@@ -171,8 +171,8 @@ TEST_QUERIES = [
 ### "No properties in database"
 ```bash
 # Fetch properties first
-curl -X POST http://localhost:8000/admin/fetch-properties \
-  -H "X-Admin-Secret: your_admin_secret"
+curl -X POST http://3.145.189.113:8000/admin/fetch-properties \
+    -H "X-Admin-Key: Admin123456"
 ```
 
 ### "401 Unauthorized" in HTTP load test
