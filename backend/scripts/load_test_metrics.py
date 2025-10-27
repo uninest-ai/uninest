@@ -12,7 +12,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Configuration
-BASE_URL = "http://localhost:8000"
+# VITE_API_BASE_URL = "http://localhost:8000"
+VITE_API_BASE_URL = os.getenv("VITE_API_BASE_URL", "http://3.145.189.113:8000")
 TOTAL_REQUESTS = 500
 CONCURRENT_WORKERS = 10
 
@@ -20,7 +21,7 @@ CONCURRENT_WORKERS = 10
 def send_request(request_num):
     """Send a single request to the root endpoint."""
     try:
-        response = requests.get(f"{BASE_URL}/", timeout=5)
+        response = requests.get(f"{VITE_API_BASE_URL}/", timeout=5)
         return {
             "request_num": request_num,
             "status_code": response.status_code,
@@ -37,7 +38,7 @@ def send_request(request_num):
 
 def main():
     print(f"🚀 Starting load test...")
-    print(f"   Target: {BASE_URL}")
+    print(f"   Target: {VITE_API_BASE_URL}")
     print(f"   Total requests: {TOTAL_REQUESTS}")
     print(f"   Concurrent workers: {CONCURRENT_WORKERS}")
     print()
@@ -82,7 +83,7 @@ def main():
     # Fetch metrics
     print("📊 Fetching metrics...")
     try:
-        response = requests.get(f"{BASE_URL}/metrics", timeout=5)
+        response = requests.get(f"{VITE_API_BASE_URL}/metrics", timeout=5)
         if response.status_code == 200:
             metrics = response.json()
             print()
