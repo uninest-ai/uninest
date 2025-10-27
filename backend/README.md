@@ -118,7 +118,7 @@ OPENAI_API_KEY=your-openai-api-key
   docker-compose up --build        # 启动本地Docker容器
   docker-compose logs -f backend   # 查看本地容器日志
   - 作用范围：只在你的电脑上
-  - 访问地址：http://localhost:8000
+  - 访问地址：http://3.145.189.113:8000
   - 数据库：连接到你.env中配置的RDS（远程数据库）
 
   云端部署（EC2服务器 3.145.189.113）
@@ -151,7 +151,7 @@ OPENAI_API_KEY=your-openai-api-key
   docker-compose logs -f backend
 
   # 测试API是否正常
-  curl http://localhost:8000/
+  curl http://3.145.189.113:8000/
 
   步骤2：提交代码到Git
 
@@ -189,7 +189,7 @@ OPENAI_API_KEY=your-openai-api-key
 ## API Documentation
 
 When the application is running, you can access the interactive Swagger UI documentation at:
-- **Local**: `http://localhost:8000/docs`
+- **Local**: `http://3.145.189.113:8000/docs`
 - **Production**: `http://3.145.189.113:8000/docs`
 
 ## Testing
@@ -371,54 +371,54 @@ db.close()
 **Fetch Real Estate Data**
 ```bash
 # Check system status
-curl "http://localhost:8000/api/v1/admin/status" \
+curl "http://3.145.189.113:8000/api/v1/admin/status" \
   -H "X-Admin-Key: Admin123456" | jq
 
 # Fetch properties (auto-creates landlords)
-curl -X POST "http://localhost:8000/api/v1/admin/fetch-real-properties?property_count=15" \
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-real-properties?property_count=15" \
   -H "X-Admin-Key: Admin123456" | jq
 
 # Fetch from multiple sources (comprehensive)
-curl -X POST "http://localhost:8000/api/v1/admin/fetch-multi-source-properties?property_count=50" \
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-multi-source-properties?property_count=50" \
   -H "X-Admin-Key: Admin123456" | jq
 
 # Manual sync (scheduler logic)
-curl -X POST "http://localhost:8000/api/v1/admin/sync/manual?sync_type=incremental" \
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/sync/manual?sync_type=incremental" \
   -H "X-Admin-Key: Admin123456" | jq
 ```
 
 **Verify Data**
 ```bash
 # Check total properties
-curl "http://localhost:8000/api/v1/properties" | jq 'length'
+curl "http://3.145.189.113:8000/api/v1/properties" | jq 'length'
 
 # Get specific property details
-curl "http://localhost:8000/api/v1/properties/1" | jq
+curl "http://3.145.189.113:8000/api/v1/properties/1" | jq
 
 # View property description with links
-curl "http://localhost:8000/api/v1/properties/1" | jq '.description'
+curl "http://3.145.189.113:8000/api/v1/properties/1" | jq '.description'
 
 # List all landlords
-curl "http://localhost:8000/api/v1/admin/landlords" \
+curl "http://3.145.189.113:8000/api/v1/admin/landlords" \
   -H "X-Admin-Key: Admin123456" | jq
 
 # List API-created landlords
-curl "http://localhost:8000/api/v1/admin/real-landlords" \
+curl "http://3.145.189.113:8000/api/v1/admin/real-landlords" \
   -H "X-Admin-Key: Admin123456" | jq
 ```
 
 **Data Analytics**
 ```bash
 # Property sources report
-curl "http://localhost:8000/api/v1/admin/property-sources" \
+curl "http://3.145.189.113:8000/api/v1/admin/property-sources" \
   -H "X-Admin-Key: Admin123456" | jq
 
 # Property links report (Realtor.com, Zillow, etc.)
-curl "http://localhost:8000/api/v1/admin/property-links" \
+curl "http://3.145.189.113:8000/api/v1/admin/property-links" \
   -H "X-Admin-Key: Admin123456" | jq
 
 # Get detailed property information
-curl "http://localhost:8000/api/v1/admin/property-details/123" \
+curl "http://3.145.189.113:8000/api/v1/admin/property-details/123" \
   -H "X-Admin-Key: Admin123456" | jq
 ```
 
@@ -429,16 +429,16 @@ curl "http://localhost:8000/api/v1/admin/property-details/123" \
 **Basic Search**
 ```bash
 # Search for apartments
-curl "http://localhost:8000/api/v1/properties/search?q=apartment&limit=5" | jq
+curl "http://3.145.189.113:8000/api/v1/properties/search?q=apartment&limit=5" | jq
 
 # Multi-word search
-curl "http://localhost:8000/api/v1/properties/search?q=modern+2BR+near+campus" | jq
+curl "http://3.145.189.113:8000/api/v1/properties/search?q=modern+2BR+near+campus" | jq
 
 # Search with minimum relevance score
-curl "http://localhost:8000/api/v1/properties/search?q=spacious&limit=10&min_score=0.1" | jq
+curl "http://3.145.189.113:8000/api/v1/properties/search?q=spacious&limit=10&min_score=0.1" | jq
 
 # Neighborhood search
-curl "http://localhost:8000/api/v1/properties/search?q=Squirrel+Hill" | jq
+curl "http://3.145.189.113:8000/api/v1/properties/search?q=Squirrel+Hill" | jq
 ```
 
 **Test BM25 Search (Python)**
@@ -488,15 +488,15 @@ db.close()
 
 ```bash
 # Reset database (WARNING: deletes all data)
-curl -X DELETE "http://localhost:8000/api/v1/admin/reset-database?confirm=RESET_ALL_DATA" \
+curl -X DELETE "http://3.145.189.113:8000/api/v1/admin/reset-database?confirm=RESET_ALL_DATA" \
   -H "X-Admin-Key: Admin123456" | jq
 
 # Clean up old properties (30+ days)
-curl -X DELETE "http://localhost:8000/api/v1/admin/cleanup-properties/1?older_than_days=30" \
+curl -X DELETE "http://3.145.189.113:8000/api/v1/admin/cleanup-properties/1?older_than_days=30" \
   -H "X-Admin-Key: Admin123456" | jq
 
 # Migrate API images to PropertyImage table
-curl -X POST "http://localhost:8000/api/v1/admin/migrate-images" \
+curl -X POST "http://3.145.189.113:8000/api/v1/admin/migrate-images" \
   -H "X-Admin-Key: Admin123456" | jq
 ```
 
@@ -507,10 +507,10 @@ curl -X POST "http://localhost:8000/api/v1/admin/migrate-images" \
 **Health Checks**
 ```bash
 # Check API is running
-curl http://localhost:8000/
+curl http://3.145.189.113:8000/
 
 # Check API docs
-curl http://localhost:8000/docs
+curl http://3.145.189.113:8000/docs
 
 # Verify database connection
 docker-compose exec backend python -c "
@@ -550,9 +550,9 @@ ssh -i ~/.ssh/uninest_mykey_new.pem ec2-user@3.145.189.113
 - **Admin Key**: Admin123456 (stored in `ADMIN_SECRET` env variable)
 
 **Endpoints:**
-- Local API: `http://localhost:8000`
+- Local API: `http://3.145.189.113:8000`
 - Production API: `http://3.145.189.113:8000`
-- Local Docs: `http://localhost:8000/docs`
+- Local Docs: `http://3.145.189.113:8000/docs`
 - Production Docs: `http://3.145.189.113:8000/docs`
 
 ---
