@@ -40,6 +40,12 @@ class MultiSourceFetcher:
         """
         Fetch comprehensive property data from multiple sources
         """
+        # Reset enrichment counter at start of new fetch
+        from app.services.property_enrichment import get_enrichment_service
+        enrichment_service = get_enrichment_service()
+        enrichment_service.reset_enrichment_count()
+        logger.info(f"Starting new fetch - enrichment counter reset (will enrich up to {enrichment_service.max_enrichments_per_fetch} properties)")
+
         results = {
             'success': True,
             'total_fetched': 0,
