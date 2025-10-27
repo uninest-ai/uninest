@@ -70,7 +70,6 @@ class PropertyEnrichmentService:
         """Build the prompt for Gemini to enrich property description."""
         title = property_data.get('title', '')
         description = property_data.get('description', '')
-        extended_desc = property_data.get('extended_description', '')
         address = property_data.get('address', '')
         prop_type = property_data.get('property_type', 'apartment')
         bedrooms = property_data.get('bedrooms', '')
@@ -78,27 +77,18 @@ class PropertyEnrichmentService:
         price = property_data.get('price', '')
         amenities = property_data.get('api_amenities', [])
 
-        amenities_text = ', '.join(amenities) if amenities else 'No specific amenities listed'
+        # Truncate inputs to prevent token overflow
+        amenities_text = ', '.join(amenities[:5]) if amenities else 'None listed'
+        desc_snippet = description[:150] if description else 'No description'
 
-        prompt = f"""Generate a concise property listing description in JSON format.
+        prompt = f"""Write a real estate listing for this property.
 
-Property: {title} | {bedrooms}BR/{bathrooms}BA {prop_type} | ${price}/mo
-Address: {address}
+{bedrooms}BR/{bathrooms}BA {prop_type} - ${price}/mo
+{address}
 Amenities: {amenities_text}
-Current info: {description[:200]}
+Info: {desc_snippet}
 
-Output JSON (no markdown, no code blocks):
-{{
-  "enriched_description": "150-200 word professional description highlighting: location benefits, key features, amenities, lifestyle appeal",
-  "search_keywords": ["list", "5-8", "searchable", "keywords"]
-}}
-
-Requirements:
-- Professional real estate tone
-- Focus on searchable features (parking, laundry, transit, quiet, modern, spacious, etc.)
-- Emphasize value and lifestyle
-- Exactly 150-200 words
-- Return ONLY the JSON object
+Create a 100-150 word description emphasizing location, features, and lifestyle. Extract 5-7 searchable keywords (parking, laundry, modern, spacious, quiet, etc.).
 """
         return prompt
 
@@ -109,7 +99,25 @@ Requirements:
                 prompt,
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.7,
-                    max_output_tokens=1200,  # Increased for 200-300 word descriptions + JSON
+                    max_output_tokens=600,  # Reduced - 100-150 words + keywords fits in ~400-500 tokens
+                    response_mime_type="application/json",  # Force JSON output
+                    response_schema={
+                        "type": "object",
+                        "properties": {
+                            "enriched_description": {
+                                "type": "string",
+                                "description": "100-150 word property description"
+                            },
+                            "search_keywords": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "5-7 searchable keywords",
+                                "minItems": 5,
+                                "maxItems": 7
+                            }
+                        },
+                        "required": ["enriched_description", "search_keywords"]
+                    }
                 ),
                 safety_settings=[
                     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -166,21 +174,32 @@ Requirements:
             image = PIL.Image.open(io.BytesIO(response.content))
 
             # Enhanced prompt with image context
-            enhanced_prompt = prompt + """
-
-**Additional Context:** An image of the property is provided. Incorporate visual details like:
-- Interior/exterior condition and style
-- Lighting and atmosphere
-- Space layout and flow
-- Notable features visible in the image
-"""
+            enhanced_prompt = prompt + "\n\nInclude visual details from the image: style, condition, lighting, layout."
 
             # Generate with image
             response = self.client.generate_content(
                 [enhanced_prompt, image],
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.7,
-                    max_output_tokens=1200,  # Increased for image analysis + description
+                    max_output_tokens=600,  # Same as text-only
+                    response_mime_type="application/json",
+                    response_schema={
+                        "type": "object",
+                        "properties": {
+                            "enriched_description": {
+                                "type": "string",
+                                "description": "100-150 word property description"
+                            },
+                            "search_keywords": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "5-7 searchable keywords",
+                                "minItems": 5,
+                                "maxItems": 7
+                            }
+                        },
+                        "required": ["enriched_description", "search_keywords"]
+                    }
                 ),
                 safety_settings=[
                     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -214,31 +233,21 @@ Requirements:
             return self._enrich_text_only(prompt)
 
     def _parse_gemini_response(self, response_text: str) -> Dict[str, str]:
-        """Parse Gemini's JSON response."""
+        """Parse Gemini's JSON response (response_mime_type ensures valid JSON)."""
         import json
-        import re
 
         try:
-            # Remove markdown code blocks if present
-            cleaned = re.sub(r'```json\s*', '', response_text)
-            cleaned = re.sub(r'```\s*', '', cleaned)
-            cleaned = cleaned.strip()
-
-            # Extract JSON
-            json_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
-            if json_match:
-                data = json.loads(json_match.group(0))
-                return {
-                    'enriched_description': data.get('enriched_description', ''),
-                    'search_keywords': data.get('search_keywords', [])
-                }
-            else:
-                logger.warning("No JSON found in Gemini response")
-                return {'enriched_description': response_text, 'search_keywords': []}
+            # With response_mime_type="application/json", Gemini returns pure JSON
+            data = json.loads(response_text.strip())
+            return {
+                'enriched_description': data.get('enriched_description', ''),
+                'search_keywords': data.get('search_keywords', [])
+            }
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse Gemini JSON: {e}")
-            return {'enriched_description': response_text, 'search_keywords': []}
+            logger.debug(f"Response text: {response_text[:200]}")
+            return {'enriched_description': '', 'search_keywords': []}
 
 
 # Singleton instance
