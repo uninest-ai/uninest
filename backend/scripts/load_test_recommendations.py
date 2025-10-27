@@ -100,7 +100,8 @@ def main():
             else:
                 failed_requests += 1
                 if failed_requests <= 3:  # Show first 3 errors
-                    print(f"   ❌ Error: {result.get('error', f'HTTP {result.get('status_code')}')}")
+                    error_msg = result.get('error') or f"HTTP {result.get('status_code')}"
+                    print(f"   ❌ Error: {error_msg}")
 
             # Progress indicator
             total = successful_requests + failed_requests
