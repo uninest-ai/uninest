@@ -1077,3 +1077,120 @@ async def update_property_embeddings(
             status_code=500,
             detail=f"Error updating embeddings: {str(e)}"
         )
+
+@router.post("/admin/enrich-existing-properties")
+async def enrich_existing_properties(
+    batch_size: int = 10,
+    admin_verified: bool = Depends(verify_admin_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Enrich existing properties that don't have AI-generated keywords.
+
+    This endpoint finds properties without AI enrichment (no "Key Features:" in extended_description)
+    and processes them with Gemini AI, respecting rate limits (10 per run, 5s delays).
+
+    Usage:
+    curl -X POST "http://3.145.189.113:8000/api/v1/admin/enrich-existing-properties?batch_size=10" \
+      -H "X-Admin-Key: Admin123456"
+    """
+    import time
+    from app.services.property_enrichment import get_enrichment_service
+
+    try:
+        # Find properties without AI enrichment
+        unenriched = db.query(Property).filter(
+            Property.is_active == True,
+            ~Property.extended_description.like('%Key Features:%')
+        ).limit(batch_size * 2).all()
+
+        total_unenriched = db.query(Property).filter(
+            Property.is_active == True,
+            ~Property.extended_description.like('%Key Features:%')
+        ).count()
+
+        if not unenriched:
+            return {
+                "success": True,
+                "message": "All properties are already enriched",
+                "total_unenriched": 0,
+                "enriched_count": 0,
+                "skipped_count": 0,
+                "remaining": 0
+            }
+
+        enrichment_service = get_enrichment_service()
+        enrichment_service.reset_enrichment_count()
+        enriched_count = 0
+        skipped_count = 0
+        errors = []
+
+        for prop in unenriched:
+            if enriched_count >= batch_size:
+                break
+
+            # Skip properties with minimal data
+            if not prop.description or len(prop.description) < 20:
+                skipped_count += 1
+                continue
+
+            # Rate limiting: 5s delay between requests
+            if enriched_count > 0:
+                time.sleep(5)
+
+            try:
+                # Prepare property data
+                property_data = {
+                    'title': prop.title,
+                    'description': prop.description,
+                    'extended_description': prop.extended_description,
+                    'address': prop.address,
+                    'property_type': prop.property_type,
+                    'bedrooms': prop.bedrooms,
+                    'bathrooms': prop.bathrooms,
+                    'price': prop.price,
+                    'api_amenities': prop.api_amenities
+                }
+
+                # Get enriched description
+                enriched = enrichment_service.enrich_property_description(
+                    property_data,
+                    image_urls=prop.api_images[:1] if prop.api_images else None
+                )
+
+                if enriched and enriched.get('enriched_description'):
+                    # Update property
+                    prop.description = enriched['enriched_description']
+
+                    if enriched.get('search_keywords'):
+                        keywords_text = "\n\nKey Features: " + ", ".join(enriched['search_keywords'])
+                        prop.extended_description = (prop.extended_description or "") + keywords_text
+
+                    db.commit()
+                    enriched_count += 1
+                else:
+                    skipped_count += 1
+
+            except Exception as e:
+                errors.append(f"Property {prop.id}: {str(e)}")
+                db.rollback()
+                skipped_count += 1
+                continue
+
+        return {
+            "success": True,
+            "message": f"Successfully enriched {enriched_count} properties",
+            "total_unenriched": total_unenriched,
+            "enriched_count": enriched_count,
+            "skipped_count": skipped_count,
+            "remaining": total_unenriched - enriched_count,
+            "errors": errors if errors else [],
+            "next_steps": f"Run again to enrich the next {batch_size} properties" if (total_unenriched - enriched_count) > 0 else "All properties are now enriched"
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error enriching properties: {str(e)}"
+        )

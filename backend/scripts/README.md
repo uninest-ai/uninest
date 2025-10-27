@@ -25,7 +25,7 @@ This directory contains utility scripts for testing, benchmarking, and maintaini
 ```bash
 cd backend
 source venv/bin/activate
-python scripts/populate_search_vectors.py
+python3 scripts/populate_search_vectors.py
 ```
 
 **Output**:
@@ -50,7 +50,7 @@ python scripts/populate_search_vectors.py
 
 **Usage**:
 ```bash
-python scripts/diagnose_bm25.py
+python3 scripts/diagnose_bm25.py
 ```
 
 **Output**:
@@ -74,7 +74,7 @@ python scripts/diagnose_bm25.py
 
 **Usage**:
 ```bash
-python scripts/precompute_embeddings.py
+python3 scripts/precompute_embeddings.py
 ```
 
 **Output**:
@@ -100,7 +100,7 @@ python scripts/precompute_embeddings.py
 
 **Usage**:
 ```bash
-python scripts/benchmark_hybrid_search.py
+python3 scripts/benchmark_hybrid_search.py
 ```
 
 **Output**:
@@ -132,7 +132,7 @@ python scripts/benchmark_hybrid_search.py
 export AUTH_TOKEN="your_jwt_token"
 
 # 2. Run load test
-python scripts/load_test_recommendations.py
+python3 scripts/load_test_recommendations.py
 ```
 
 **Output**:
@@ -157,7 +157,7 @@ python scripts/load_test_recommendations.py
 
 **Usage**:
 ```bash
-python scripts/load_test_metrics.py
+python3 scripts/load_test_metrics.py
 ```
 
 **Output**:
@@ -174,20 +174,20 @@ Run scripts in this order:
 
 ```bash
 # 1. Rebuild BM25 search index
-python scripts/populate_search_vectors.py
+python3 scripts/populate_search_vectors.py
 
 # 2. Verify BM25 is working
-python scripts/diagnose_bm25.py
+python3 scripts/diagnose_bm25.py
 
 # 3. Pre-generate vector embeddings (optional but recommended)
-python scripts/precompute_embeddings.py
+python3 scripts/precompute_embeddings.py
 
 # 4. Benchmark search performance
-python scripts/benchmark_hybrid_search.py
+python3 scripts/benchmark_hybrid_search.py
 
 # 5. (Optional) Load test API endpoint
 export AUTH_TOKEN="your_token"
-python scripts/load_test_recommendations.py
+python3 scripts/load_test_recommendations.py
 ```
 
 ---
