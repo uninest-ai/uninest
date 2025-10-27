@@ -84,7 +84,7 @@ The API is organized into the following groups:
 Create a `.env` file with the following variables:
 
 ```
-DATABASE_URL=postgresql://uninest_admin:4Iie-ZDx1n.]E*NWG-kf3~#R~)-z@uninest-db.c9aes4a2k2n8.us-east-2.rds.amazonaws.com:5432/uninest
+DATABASE_URL=postgresql://uninest_admin:xxxxxx@db:0000/uninest
 SECRET_KEY=your-secret-key-for-jwt
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 AWS_ACCESS_KEY_ID=your-aws-access-key

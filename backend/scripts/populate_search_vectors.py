@@ -13,13 +13,14 @@ Usage:
 
 import sys
 import os
+import argparse
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from sqlalchemy import text
 from app.database import SessionLocal
 
 
-def populate_search_vectors():
+def populate_search_vectors(force: bool = False):
     """Populate search_vector for all properties."""
     print("=" * 60)
     print("🔄 POPULATING SEARCH VECTORS")
@@ -47,16 +48,20 @@ def populate_search_vectors():
         print(f"   Currently populated: {before_populated}")
         print(f"   Currently NULL: {before_null}")
 
-        if before_null == 0:
+        if before_null == 0 and not force:
             print("\n✅ All properties already have search_vector populated!")
+            print("   Use --force to rebuild the search index anyway.")
             return
 
         # Populate search_vector
-        print(f"\n2. Populating search_vector for {before_null} properties...")
+        if force:
+            print("\n2. Force-rebuilding search_vector for all properties...")
+        else:
+            print(f"\n2. Populating search_vector for {before_null} properties...")
 
         # Include both description AND extended_description for maximum searchability
         # This ensures AI-generated keywords are searchable
-        db.execute(text("""
+        update_sql = """
             UPDATE properties
             SET search_vector =
                 setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
@@ -64,8 +69,11 @@ def populate_search_vectors():
                 setweight(to_tsvector('english', COALESCE(extended_description, '')), 'B') ||
                 setweight(to_tsvector('english', COALESCE(address, '')), 'C') ||
                 setweight(to_tsvector('english', COALESCE(city, '')), 'C')
-            WHERE search_vector IS NULL
-        """))
+        """
+        if not force:
+            update_sql += "\n            WHERE search_vector IS NULL"
+
+        db.execute(text(update_sql))
 
         db.commit()
         print("   ✅ Update executed")
@@ -91,7 +99,8 @@ def populate_search_vectors():
         print("\n" + "=" * 60)
         print("✅ COMPLETED")
         print("=" * 60)
-        print(f"   Updated: {after_populated - before_populated} properties")
+        updated_count = after_populated - before_populated if not force else after_populated
+        print(f"   Updated: {updated_count} properties")
 
         if after_null == 0:
             print("\n🎉 Success! All properties now have search_vector populated.")
@@ -124,7 +133,15 @@ def populate_search_vectors():
 
 
 def main():
-    populate_search_vectors()
+    parser = argparse.ArgumentParser(description="Populate or rebuild properties.search_vector values")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Rebuild search_vector for all properties even if already populated"
+    )
+    args = parser.parse_args()
+
+    populate_search_vectors(force=args.force)
 
     print("\n" + "=" * 60)
     print("NEXT STEPS:")

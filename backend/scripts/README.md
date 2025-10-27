@@ -164,6 +164,52 @@ python3 scripts/load_test_metrics.py
 - Metrics endpoint status
 - Sample metrics data
 
+```
+🚀 Starting load test...
+   Target: http://3.145.189.113:8000
+   Total requests: 500
+   Concurrent workers: 10
+
+   Progress: 50/500 requests sent...
+   Progress: 100/500 requests sent...
+   Progress: 150/500 requests sent...
+   Progress: 200/500 requests sent...
+   Progress: 250/500 requests sent...
+   Progress: 300/500 requests sent...
+   Progress: 350/500 requests sent...
+   Progress: 400/500 requests sent...
+   Progress: 450/500 requests sent...
+   Progress: 500/500 requests sent...
+
+✅ Load test completed!
+   Duration: 3.11 seconds
+   Successful: 500
+   Failed: 0
+   Throughput: 160.65 req/s
+
+📊 Fetching metrics...
+
+==================================================
+METRICS REPORT
+==================================================
+{
+  "latency_ms": {
+    "p50": 1.8,
+    "p95": 13.2,
+    "p99": 18.1
+  },
+  "qps_1m": 8.35
+}
+==================================================
+
+Latency Percentiles (ms):
+  P50 (median): 1.8 ms
+  P95: 13.2 ms
+  P99: 18.1 ms
+
+QPS (last 1 minute): 8.35 req/s
+```
+
 ---
 
 ## Recommended Workflow
@@ -241,7 +287,7 @@ python3 scripts/load_test_recommendations.py
 
 ---
 
-## For Resume/Documentation
+## For Documentation
 
 After running benchmarks, use the auto-generated bullet point from `benchmark_hybrid_search.py`:
 
