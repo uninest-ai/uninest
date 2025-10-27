@@ -119,8 +119,31 @@ You are a professional real estate copywriter. Generate a compelling, searchable
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.7,
                     max_output_tokens=800,
-                )
+                ),
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                ]
             )
+
+            # Check if response was blocked
+            if not response.candidates or len(response.candidates) == 0:
+                logger.warning("Gemini returned no candidates (likely blocked)")
+                return {'enriched_description': '', 'search_keywords': []}
+
+            candidate = response.candidates[0]
+
+            # Check finish_reason (1=STOP (success), 2=SAFETY, 3=RECITATION, 4=OTHER)
+            if hasattr(candidate, 'finish_reason') and candidate.finish_reason != 1:
+                logger.warning(f"Gemini blocked response (finish_reason={candidate.finish_reason})")
+                return {'enriched_description': '', 'search_keywords': []}
+
+            # Check if content exists
+            if not hasattr(candidate, 'content') or not candidate.content.parts:
+                logger.warning("Gemini response has no content")
+                return {'enriched_description': '', 'search_keywords': []}
 
             return self._parse_gemini_response(response.text)
 
@@ -159,8 +182,28 @@ You are a professional real estate copywriter. Generate a compelling, searchable
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.7,
                     max_output_tokens=800,
-                )
+                ),
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                ]
             )
+
+            # Check if response was blocked
+            if not response.candidates or len(response.candidates) == 0:
+                logger.warning("Gemini image analysis blocked, falling back to text-only")
+                return self._enrich_text_only(prompt)
+
+            candidate = response.candidates[0]
+            if hasattr(candidate, 'finish_reason') and candidate.finish_reason != 1:
+                logger.warning(f"Gemini image analysis blocked (finish_reason={candidate.finish_reason}), falling back to text-only")
+                return self._enrich_text_only(prompt)
+
+            if not hasattr(candidate, 'content') or not candidate.content.parts:
+                logger.warning("Gemini image response has no content, falling back to text-only")
+                return self._enrich_text_only(prompt)
 
             return self._parse_gemini_response(response.text)
 

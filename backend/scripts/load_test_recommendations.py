@@ -10,7 +10,7 @@ Usage:
     docker-compose up -d
 
     # 2. Get your auth token (login first)
-    export AUTH_TOKEN="your_jwt_token_here"
+    export SECRET_KEY="your_jwt_token_here"
 
     # 3. Run the load test
     python scripts/load_test_recommendations.py
@@ -26,7 +26,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Configuration
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
-AUTH_TOKEN = os.getenv("AUTH_TOKEN", "")  # Set this to your JWT token
+SECRET_KEY = os.getenv("SECRET_KEY", "")  # Set this to your JWT token
 TOTAL_REQUESTS = 200
 CONCURRENT_WORKERS = 10
 
@@ -69,9 +69,9 @@ def main():
     print(f"   Total requests: {TOTAL_REQUESTS}")
     print(f"   Concurrent workers: {CONCURRENT_WORKERS}")
 
-    if not AUTH_TOKEN:
-        print("\n⚠️  WARNING: No AUTH_TOKEN set. Requests will fail if authentication required.")
-        print("   Set token with: export AUTH_TOKEN='your_jwt_token'")
+    if not SECRET_KEY:
+        print("\n⚠️  WARNING: No SECRET_KEY set. Requests will fail if authentication required.")
+        print("   Set token with: export SECRET_KEY='your_jwt_token'")
         response = input("\n   Continue anyway? (y/n): ")
         if response.lower() != 'y':
             return
@@ -86,7 +86,7 @@ def main():
 
     with ThreadPoolExecutor(max_workers=CONCURRENT_WORKERS) as executor:
         futures = [
-            executor.submit(send_recommendation_request, i, AUTH_TOKEN)
+            executor.submit(send_recommendation_request, i, SECRET_KEY)
             for i in range(TOTAL_REQUESTS)
         ]
 
