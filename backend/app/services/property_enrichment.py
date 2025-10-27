@@ -111,9 +111,7 @@ Create a 100-150 word description emphasizing location, features, and lifestyle.
                             "search_keywords": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "5-7 searchable keywords",
-                                "minItems": 5,
-                                "maxItems": 7
+                                "description": "Array of 5-7 searchable keywords"
                             }
                         },
                         "required": ["enriched_description", "search_keywords"]
@@ -193,9 +191,7 @@ Create a 100-150 word description emphasizing location, features, and lifestyle.
                             "search_keywords": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "5-7 searchable keywords",
-                                "minItems": 5,
-                                "maxItems": 7
+                                "description": "Array of 5-7 searchable keywords"
                             }
                         },
                         "required": ["enriched_description", "search_keywords"]
