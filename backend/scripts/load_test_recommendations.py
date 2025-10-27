@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Configuration
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+VITE_API_BASE_URL = os.getenv("VITE_API_BASE_URL", "http://localhost:8000")
 SECRET_KEY = os.getenv("SECRET_KEY", "")  # Set this to your JWT token
 TOTAL_REQUESTS = 200
 CONCURRENT_WORKERS = 10
@@ -38,7 +38,7 @@ def send_recommendation_request(request_num: int, token: str):
         headers = {"Authorization": f"Bearer {token}"} if token else {}
 
         response = requests.get(
-            f"{BASE_URL}/recommendations/properties?limit=10",
+            f"{VITE_API_BASE_URL}/recommendations/properties?limit=10",
             headers=headers,
             timeout=10
         )
@@ -65,7 +65,7 @@ def main():
     print("=" * 70)
     print("🚀 RECOMMENDATIONS ENDPOINT LOAD TEST")
     print("=" * 70)
-    print(f"   Target: {BASE_URL}/recommendations/properties")
+    print(f"   Target: {VITE_API_BASE_URL}/recommendations/properties")
     print(f"   Total requests: {TOTAL_REQUESTS}")
     print(f"   Concurrent workers: {CONCURRENT_WORKERS}")
 
@@ -136,7 +136,7 @@ def main():
     # Fetch server-side metrics
     print("\n📈 Fetching server metrics from /metrics endpoint...")
     try:
-        response = requests.get(f"{BASE_URL}/metrics", timeout=5)
+        response = requests.get(f"{VITE_API_BASE_URL}/metrics", timeout=5)
         if response.status_code == 200:
             metrics = response.json()
 
