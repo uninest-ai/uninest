@@ -39,7 +39,7 @@ Pillow==10.2.0  # Required for Gemini image analysis
 
 # AI Integration
 # openai>=1.30.0  # OPTIONAL - Expensive, replaced by Gemini
-google-generativeai==0.3.2  # Gemini API - cheap and powerful for image analysis
+google-generativeai>=0.8.0  # Gemini API - cheap and powerful for image analysis
 
 # Web Server
 gunicorn==21.2.0  # Used via command line
