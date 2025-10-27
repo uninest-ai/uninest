@@ -115,8 +115,10 @@ def get_ground_truth_relevant_properties(
         # Check if any keyword appears in property data
         search_text = " ".join(filter(None, [
             prop.address or "",
-            prop.neighborhood or "",
-            prop.description or ""
+            prop.city or "",
+            prop.title or "",
+            prop.description or "",
+            prop.extended_description or ""
         ])).lower()
 
         for keyword in keywords:
