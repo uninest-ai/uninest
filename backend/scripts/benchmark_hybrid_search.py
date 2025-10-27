@@ -204,7 +204,8 @@ def run_load_test(
     db: Session,
     queries: List[str],
     num_iterations: int = 50,
-    concurrent_workers: int = 5
+    concurrent_workers: int = 5,
+    method: str = "hybrid"
 ) -> Dict:
     """
     Run load test with concurrent queries.
@@ -214,6 +215,7 @@ def run_load_test(
         queries: List of queries to test
         num_iterations: Number of times to repeat each query
         concurrent_workers: Number of concurrent workers
+        method: Search method ("hybrid" or "bm25")
 
     Returns:
         Performance statistics
@@ -241,7 +243,7 @@ def run_load_test(
             future = executor.submit(
                 benchmark_single_query,
                 query,
-                "hybrid"
+                method
             )
             futures.append(future)
 
@@ -276,18 +278,19 @@ def run_load_test(
     }
 
 
-def run_recall_benchmark(db: Session, test_queries: List[Dict]) -> Dict:
+def run_recall_benchmark(db: Session, test_queries: List[Dict], method: str = "hybrid") -> Dict:
     """
     Benchmark retrieval quality (Recall@10 and Precision@10).
 
     Args:
         db: Database session
         test_queries: List of test query dictionaries
+        method: Search method ("hybrid" or "bm25")
 
     Returns:
         Recall and Precision statistics
     """
-    print(f"\n📊 Measuring Recall@10 and Precision@10...")
+    print(f"\n📊 Measuring Recall@10 and Precision@10 ({method.upper()})...")
 
     recall_scores = []
     precision_scores = []
@@ -300,9 +303,13 @@ def run_recall_benchmark(db: Session, test_queries: List[Dict]) -> Dict:
         # Get ground truth relevant properties
         relevant_ids = get_ground_truth_relevant_properties(db, query_info)
 
-        # Get hybrid search results
-        search_results = hybrid_search_simple(db=db, query=query, limit=10)
-        retrieved_ids = [r["id"] for r in search_results]
+        # Get search results based on method
+        if method == "bm25":
+            bm25_results = bm25_search_properties_ids_only(db=db, query=query, limit=10)
+            retrieved_ids = [pid for pid, _ in bm25_results]
+        else:  # hybrid
+            search_results = hybrid_search_simple(db=db, query=query, limit=10)
+            retrieved_ids = [r["id"] for r in search_results]
 
         # Calculate recall and precision
         recall = calculate_recall_at_k(retrieved_ids, relevant_ids, k=10)
@@ -332,9 +339,15 @@ def run_recall_benchmark(db: Session, test_queries: List[Dict]) -> Dict:
 
 
 def main():
-    """Run comprehensive benchmark."""
+    """Run comprehensive benchmark comparing BM25 vs Hybrid."""
+    import argparse
+    parser = argparse.ArgumentParser(description="Benchmark search system")
+    parser.add_argument("--method", choices=["bm25", "hybrid", "both"], default="both",
+                       help="Which method to benchmark (default: both)")
+    args = parser.parse_args()
+
     print("=" * 60)
-    print("🚀 HYBRID SEARCH BENCHMARK")
+    print("🚀 SEARCH BENCHMARK")
     print("=" * 60)
 
     db = SessionLocal()
@@ -356,68 +369,136 @@ def main():
             print("\n❌ No properties in database. Please run data fetch first.")
             return
 
-        # 1. Recall Benchmark
-        recall_results = run_recall_benchmark(db, TEST_QUERIES)
-
-        # 2. Load Test (Performance)
         queries = [q["query"] for q in TEST_QUERIES]
-        perf_results = run_load_test(
-            db=db,
-            queries=queries,
-            num_iterations=50,  # 50 iterations × 5 queries = 250 requests
-            concurrent_workers=5
-        )
 
-        # Print Results
-        print("\n" + "=" * 60)
-        print("📈 BENCHMARK RESULTS")
-        print("=" * 60)
+        # Determine which methods to run
+        methods_to_run = []
+        if args.method == "both":
+            methods_to_run = ["bm25", "hybrid"]
+        else:
+            methods_to_run = [args.method]
 
-        print(f"\n🎯 RETRIEVAL QUALITY:")
-        print(f"   Average Recall@10: {recall_results['average_recall@10']:.3f}")
-        print(f"   Average Precision@10: {recall_results['average_precision@10']:.3f}")
-        print("\n   Per-query breakdown:")
-        for result in recall_results['per_query']:
-            print(f"      '{result['query']}':")
-            print(f"         Recall@10: {result['recall@10']:.3f} | Precision@10: {result['precision@10']:.3f}")
+        all_results = {}
 
-        print(f"\n⚡ PERFORMANCE:")
-        print(f"   Total Requests: {perf_results['total_requests']}")
-        print(f"   Duration: {perf_results['duration_sec']} sec")
-        print(f"   QPS: {perf_results['qps']} req/s")
-        print(f"\n   Latency (ms):")
-        print(f"      p50 (median): {perf_results['latency_ms']['p50']} ms")
-        print(f"      p95: {perf_results['latency_ms']['p95']} ms")
-        print(f"      p99: {perf_results['latency_ms']['p99']} ms")
-        print(f"      mean: {perf_results['latency_ms']['mean']} ms")
+        for method in methods_to_run:
+            print(f"\n{'='*60}")
+            print(f"📊 BENCHMARKING: {method.upper()}")
+            print(f"{'='*60}")
+
+            # 1. Recall Benchmark
+            recall_results = run_recall_benchmark(db, TEST_QUERIES, method=method)
+
+            # 2. Load Test (Performance)
+            perf_results = run_load_test(
+                db=db,
+                queries=queries,
+                num_iterations=50,
+                concurrent_workers=5,
+                method=method
+            )
+
+            all_results[method] = {
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "recall": recall_results,
+                "performance": perf_results
+            }
 
         # Save results to file
-        results = {
+        import os
+        import platform
+        import psutil
+
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        results_dir = "benchmark_results"
+        os.makedirs(results_dir, exist_ok=True)
+
+        # Add metadata for environment tracking
+        metadata = {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "recall": recall_results,
-            "performance": perf_results
+            "database_size": property_count,
+            "quality_properties": quality_count,
+            "environment": {
+                "python_version": platform.python_version(),
+                "platform": platform.platform(),
+                "cpu_count": psutil.cpu_count(),
+                "memory_gb": round(psutil.virtual_memory().total / (1024**3), 1),
+                "hostname": platform.node()
+            }
         }
 
-        output_file = "benchmark_results.json"
-        with open(output_file, "w") as f:
-            json.dump(results, f, indent=2)
+        # Save individual results
+        for method, result in all_results.items():
+            result["metadata"] = metadata
 
-        print(f"\n💾 Results saved to: {output_file}")
+            # Save method-specific file
+            method_file = os.path.join(results_dir, f"benchmark_{method}_{timestamp}.json")
+            with open(method_file, "w") as f:
+                json.dump(result, f, indent=2)
+            print(f"\n💾 {method.upper()} results saved: {method_file}")
 
-        # Generate resume bullet point
-        print("\n" + "=" * 60)
-        print("📝 RESUME BULLET POINT:")
-        print("=" * 60)
-        bullet = (
-            f"Implemented hybrid retrieval (Postgres BM25 + vector embeddings) with RRF fusion, "
-            f"delivering Precision@10 {recall_results['average_precision@10']:.2f} "
-            f"while achieving p95 latency {perf_results['latency_ms']['p95']} ms "
-            f"via candidate pruning and local cosine scoring; "
-            f"exposed /metrics (p50/p95/p99, QPS) endpoint "
-            f"with load tests baselining QPS ~{perf_results['qps']} "
-            f"and p95 ~{perf_results['latency_ms']['p95']} ms."
-        )
-        print(f"\n{bullet}\n")
+        # If both methods were run, compare them automatically
+        if len(methods_to_run) == 2:
+            print("\n" + "=" * 60)
+            print("📊 BM25 vs HYBRID COMPARISON")
+            print("=" * 60)
+
+            bm25_res = all_results["bm25"]
+            hybrid_res = all_results["hybrid"]
+
+            # Quality comparison
+            print(f"\n🎯 RETRIEVAL QUALITY:")
+            print(f"{'Metric':<20} {'BM25':>10} {'Hybrid':>10} {'Improvement':>12}")
+            print("-" * 60)
+
+            bm25_prec = bm25_res['recall']['average_precision@10']
+            hybrid_prec = hybrid_res['recall']['average_precision@10']
+            prec_delta = ((hybrid_prec - bm25_prec) / bm25_prec * 100) if bm25_prec > 0 else 0
+            print(f"{'Precision@10':<20} {bm25_prec:>10.3f} {hybrid_prec:>10.3f} {prec_delta:>11.1f}% {'✅' if prec_delta > 0 else '⚠️'}")
+
+            # Performance comparison
+            print(f"\n⚡ PERFORMANCE:")
+            print(f"{'Metric':<20} {'BM25':>10} {'Hybrid':>10} {'Change':>12}")
+            print("-" * 60)
+
+            bm25_p95 = bm25_res['performance']['latency_ms']['p95']
+            hybrid_p95 = hybrid_res['performance']['latency_ms']['p95']
+            p95_delta = hybrid_p95 - bm25_p95
+            print(f"{'p95 latency (ms)':<20} {bm25_p95:>10.1f} {hybrid_p95:>10.1f} {p95_delta:>11.1f} {'⚠️' if p95_delta > 0 else '✅'}")
+
+            bm25_qps = bm25_res['performance']['qps']
+            hybrid_qps = hybrid_res['performance']['qps']
+            qps_delta = hybrid_qps - bm25_qps
+            print(f"{'QPS':<20} {bm25_qps:>10.1f} {hybrid_qps:>10.1f} {qps_delta:>11.1f} {'✅' if qps_delta > 0 else '⚠️'}")
+
+            # Resume bullet
+            print("\n" + "=" * 60)
+            print("📝 RESUME BULLET POINT:")
+            print("=" * 60)
+            bullet = (
+                f"Implemented hybrid retrieval (Postgres BM25 + vector embeddings) with RRF fusion, "
+                f"delivering Precision@10 {bm25_prec:.2f}→{hybrid_prec:.2f} "
+                f"({prec_delta:+.0f}pp) at p95 latency ~{hybrid_p95:.0f}ms "
+                f"via candidate pruning and local cosine scoring; "
+                f"exposed /metrics (p50/p95/p99, QPS) endpoint "
+                f"with load tests baselining QPS ~{hybrid_qps:.0f} req/s."
+            )
+            print(f"\n{bullet}\n")
+        else:
+            # Single method - print its results
+            method = methods_to_run[0]
+            result = all_results[method]
+
+            print("\n" + "=" * 60)
+            print(f"📈 {method.upper()} RESULTS")
+            print("=" * 60)
+
+            print(f"\n🎯 RETRIEVAL QUALITY:")
+            print(f"   Precision@10: {result['recall']['average_precision@10']:.3f}")
+            print(f"   Recall@10: {result['recall']['average_recall@10']:.3f}")
+
+            print(f"\n⚡ PERFORMANCE:")
+            print(f"   p95: {result['performance']['latency_ms']['p95']:.1f} ms")
+            print(f"   QPS: {result['performance']['qps']:.1f} req/s")
 
     finally:
         db.close()

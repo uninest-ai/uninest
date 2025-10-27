@@ -56,6 +56,9 @@ schedule==1.2.0
 # HTTP Requests
 requests==2.31.0
 
+# System Monitoring (for benchmark metadata)
+psutil==5.9.8
+
 # Machine Learning & Embeddings
 # Install PyTorch CPU-only first to avoid large CUDA version:
 #   pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu

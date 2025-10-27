@@ -1,0 +1,11 @@
+# Benchmark Results Directory
+
+This directory stores historical benchmark results for tracking performance improvements.
+
+Each benchmark run creates a timestamped JSON file with:
+- Recall@10, Precision@10
+- Latency (p50, p95, p99)
+- QPS
+- Database size at time of test
+
+Use `compare_benchmarks.py` to generate before/after comparison tables.

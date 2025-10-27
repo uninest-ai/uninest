@@ -1,0 +1,30 @@
+# Python-specific (not in root .gitignore)
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+*.egg-info/
+
+# Backend-specific environment
+.env.local
+
+# Database files
+*.db
+*.sqlite
+
+# Test coverage
+htmlcov/
+.coverage
+
+# Vim swap files (additional)
+*.swo
+
+# Logs
+*.log
+
+# Benchmark results (keep only baseline)
+benchmark_results.json
+benchmark_results/benchmark_202*.json
+!benchmark_results/benchmark_baseline.json
+!benchmark_results/.gitkeep
