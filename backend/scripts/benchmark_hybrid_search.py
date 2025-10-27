@@ -84,6 +84,36 @@ def calculate_recall_at_k(
     return relevant_retrieved / len(relevant_ids)
 
 
+def calculate_precision_at_k(
+    retrieved_ids: List[int],
+    relevant_ids: Set[int],
+    k: int = 10
+) -> float:
+    """
+    Calculate Precision@K metric.
+
+    Precision@K = (relevant items in top K) / K
+
+    Unlike Recall, Precision is stable across dataset sizes and measures
+    whether the results we return are actually relevant.
+
+    Args:
+        retrieved_ids: List of retrieved property IDs (in ranking order)
+        relevant_ids: Set of truly relevant property IDs
+        k: Number of top results to consider
+
+    Returns:
+        Precision@K score (0.0 to 1.0)
+    """
+    if not retrieved_ids:
+        return 0.0
+
+    top_k = set(retrieved_ids[:k])
+    relevant_retrieved = len(top_k & relevant_ids)
+
+    return relevant_retrieved / k
+
+
 def get_ground_truth_relevant_properties(
     db: Session,
     query_info: Dict
@@ -248,18 +278,19 @@ def run_load_test(
 
 def run_recall_benchmark(db: Session, test_queries: List[Dict]) -> Dict:
     """
-    Benchmark retrieval quality (Recall@10).
+    Benchmark retrieval quality (Recall@10 and Precision@10).
 
     Args:
         db: Database session
         test_queries: List of test query dictionaries
 
     Returns:
-        Recall statistics
+        Recall and Precision statistics
     """
-    print(f"\n📊 Measuring Recall@10...")
+    print(f"\n📊 Measuring Recall@10 and Precision@10...")
 
     recall_scores = []
+    precision_scores = []
     results_per_query = []
 
     for query_info in test_queries:
@@ -273,23 +304,29 @@ def run_recall_benchmark(db: Session, test_queries: List[Dict]) -> Dict:
         search_results = hybrid_search_simple(db=db, query=query, limit=10)
         retrieved_ids = [r["id"] for r in search_results]
 
-        # Calculate recall
+        # Calculate recall and precision
         recall = calculate_recall_at_k(retrieved_ids, relevant_ids, k=10)
+        precision = calculate_precision_at_k(retrieved_ids, relevant_ids, k=10)
+
         recall_scores.append(recall)
+        precision_scores.append(precision)
 
         results_per_query.append({
             "query": query,
             "recall@10": round(recall, 3),
+            "precision@10": round(precision, 3),
             "relevant_count": len(relevant_ids),
             "retrieved_count": len(retrieved_ids)
         })
 
-        print(f"      Recall@10: {recall:.3f} ({len(retrieved_ids)} retrieved, {len(relevant_ids)} relevant)")
+        print(f"      Recall@10: {recall:.3f} | Precision@10: {precision:.3f} ({len(retrieved_ids)} retrieved, {len(relevant_ids)} relevant)")
 
     avg_recall = statistics.mean(recall_scores) if recall_scores else 0.0
+    avg_precision = statistics.mean(precision_scores) if precision_scores else 0.0
 
     return {
         "average_recall@10": round(avg_recall, 3),
+        "average_precision@10": round(avg_precision, 3),
         "per_query": results_per_query
     }
 
@@ -338,9 +375,11 @@ def main():
 
         print(f"\n🎯 RETRIEVAL QUALITY:")
         print(f"   Average Recall@10: {recall_results['average_recall@10']:.3f}")
+        print(f"   Average Precision@10: {recall_results['average_precision@10']:.3f}")
         print("\n   Per-query breakdown:")
         for result in recall_results['per_query']:
-            print(f"      '{result['query']}': {result['recall@10']:.3f}")
+            print(f"      '{result['query']}':")
+            print(f"         Recall@10: {result['recall@10']:.3f} | Precision@10: {result['precision@10']:.3f}")
 
         print(f"\n⚡ PERFORMANCE:")
         print(f"   Total Requests: {perf_results['total_requests']}")
@@ -371,7 +410,7 @@ def main():
         print("=" * 60)
         bullet = (
             f"Implemented hybrid retrieval (Postgres BM25 + vector embeddings) with RRF fusion, "
-            f"delivering Recall@10 {recall_results['average_recall@10']:.2f} "
+            f"delivering Precision@10 {recall_results['average_precision@10']:.2f} "
             f"while achieving p95 latency {perf_results['latency_ms']['p95']} ms "
             f"via candidate pruning and local cosine scoring; "
             f"exposed /metrics (p50/p95/p99, QPS) endpoint "
