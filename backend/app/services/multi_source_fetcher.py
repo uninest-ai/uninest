@@ -3,7 +3,11 @@ from typing import Dict, List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 import time
+import logging
 from app.models import Property, User, LandlordProfile
+from app.services.property_enrichment import get_enrichment_service
+
+logger = logging.getLogger(__name__)
 
 class MultiSourceFetcher:
     """
@@ -335,7 +339,10 @@ class MultiSourceFetcher:
                 db.add(new_property)
                 db.commit()
                 db.refresh(new_property)
-                
+
+                # Enrich property description with Gemini AI
+                self._enrich_property_with_gemini(db, new_property, api_images)
+
                 saved_count += 1
                 properties_list.append({
                     'title': title,
@@ -441,7 +448,10 @@ class MultiSourceFetcher:
                 db.add(new_property)
                 db.commit()
                 db.refresh(new_property)
-                
+
+                # Enrich property description with Gemini AI
+                self._enrich_property_with_gemini(db, new_property, api_images)
+
                 saved_count += 1
                 properties_list.append({
                     'title': title,
@@ -685,5 +695,61 @@ class MultiSourceFetcher:
             return float(str(baths_str).replace('+', ''))
         except:
             return 1.0
+
+    def _enrich_property_with_gemini(
+        self,
+        db: Session,
+        property_obj: Property,
+        image_urls: List[str]
+    ) -> None:
+        """
+        Enrich property description using Gemini AI.
+
+        Args:
+            db: Database session
+            property_obj: Property object to enrich
+            image_urls: List of image URLs for visual analysis
+        """
+        try:
+            enrichment_service = get_enrichment_service()
+
+            # Prepare property data for enrichment
+            property_data = {
+                'title': property_obj.title,
+                'description': property_obj.description,
+                'extended_description': property_obj.extended_description,
+                'address': property_obj.address,
+                'property_type': property_obj.property_type,
+                'bedrooms': property_obj.bedrooms,
+                'bathrooms': property_obj.bathrooms,
+                'price': property_obj.price,
+                'api_amenities': property_obj.api_amenities
+            }
+
+            # Get enriched description (uses first image if available)
+            enriched = enrichment_service.enrich_property_description(
+                property_data,
+                image_urls=image_urls[:1] if image_urls else None  # Use only first image
+            )
+
+            if enriched and enriched.get('enriched_description'):
+                # Update property with AI-generated content
+                property_obj.description = enriched['enriched_description']
+
+                # Add keywords to extended_description for search
+                if enriched.get('search_keywords'):
+                    keywords_text = "\n\nKey Features: " + ", ".join(enriched['search_keywords'])
+                    property_obj.extended_description = (
+                        property_obj.extended_description or ""
+                    ) + keywords_text
+
+                db.commit()
+                logger.info(f"Enriched property {property_obj.id} with Gemini AI")
+
+        except Exception as e:
+            logger.error(f"Failed to enrich property {property_obj.id}: {e}")
+            # Don't rollback - enrichment is optional
+            pass
+
 
 import random  # Add this import at the top of the file

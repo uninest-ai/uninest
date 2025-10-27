@@ -77,9 +77,23 @@ def get_property_recommendations(
     search_query = " ".join(search_terms)
     logger.info(f"Simplified search query from {len(user_preferences)} preferences: {search_query}")
 
-    # Use hybrid search to find properties
-    logger.info(f"Performing hybrid search with query: {search_query}")
-    search_results = hybrid_search_simple(db=db, query=search_query, limit=limit)
+    # Extract target price from user's budget
+    target_price = tenant_profile.budget if tenant_profile.budget and tenant_profile.budget > 0 else None
+
+    # Use hybrid search to find properties with price weighting
+    logger.info(f"Performing hybrid search with query: {search_query}, target_price: {target_price}")
+    from app.services.hybrid_search import hybrid_search
+    search_results = hybrid_search(
+        db=db,
+        query=search_query,
+        limit=limit,
+        bm25_limit=200,
+        vector_limit=50,
+        rrf_k=60,
+        min_bm25_score=0.0,
+        target_price=target_price,
+        price_weight=0.4  # 40% weight on price matching
+    )
     logger.info(f"Hybrid search returned {len(search_results)} results")
 
     # Update recommendation relationships

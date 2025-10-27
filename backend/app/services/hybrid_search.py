@@ -59,6 +59,81 @@ def reciprocal_rank_fusion(
     return fused_results
 
 
+def price_weighted_rerank(
+    fused_results: List[Tuple[int, float]],
+    properties: List[Property],
+    target_price: float = None,
+    price_weight: float = 0.4
+) -> List[Tuple[int, float]]:
+    """
+    Rerank search results by combining relevance scores with price matching.
+
+    Args:
+        fused_results: List of (property_id, rrf_score) tuples from RRF fusion
+        properties: List of Property objects
+        target_price: Target price for matching (if None, uses median of results)
+        price_weight: Weight for price score (0.0-1.0). Higher = price matters more.
+                     Default 0.4 means 40% price, 60% relevance.
+
+    Returns:
+        Reranked list of (property_id, combined_score) tuples
+    """
+    if not fused_results or not properties:
+        return fused_results
+
+    # Create property map
+    prop_map = {prop.id: prop for prop in properties}
+
+    # Get all prices
+    prices = [prop_map[pid].price for pid, _ in fused_results if pid in prop_map]
+    if not prices:
+        return fused_results
+
+    # If no target price provided, use median as target
+    if target_price is None:
+        prices_sorted = sorted(prices)
+        target_price = prices_sorted[len(prices_sorted) // 2]
+
+    # Calculate price range for normalization (±50% of target)
+    price_range = target_price * 0.5
+
+    # Normalize RRF scores to 0-1
+    rrf_scores = [score for _, score in fused_results]
+    max_rrf = max(rrf_scores) if rrf_scores else 1.0
+    min_rrf = min(rrf_scores) if rrf_scores else 0.0
+    rrf_range = max_rrf - min_rrf if max_rrf > min_rrf else 1.0
+
+    reranked = []
+    for prop_id, rrf_score in fused_results:
+        if prop_id not in prop_map:
+            continue
+
+        prop = prop_map[prop_id]
+
+        # Normalize RRF score to 0-1
+        norm_rrf_score = (rrf_score - min_rrf) / rrf_range if rrf_range > 0 else 0.5
+
+        # Calculate price score (1.0 = perfect match, decreases with distance)
+        price_diff = abs(prop.price - target_price)
+        if price_diff <= price_range:
+            # Within range: linear decay from 1.0 to 0.0
+            price_score = 1.0 - (price_diff / price_range)
+        else:
+            # Outside range: exponential decay
+            price_score = max(0.0, 0.5 * (1.0 - (price_diff - price_range) / target_price))
+
+        # Combine scores with weighting
+        combined_score = (1 - price_weight) * norm_rrf_score + price_weight * price_score
+
+        reranked.append((prop_id, combined_score))
+
+    # Sort by combined score
+    reranked.sort(key=lambda x: x[1], reverse=True)
+
+    logger.info(f"Price-weighted reranking: target=${target_price:.0f}, weight={price_weight}")
+    return reranked
+
+
 def hybrid_search(
     db: Session,
     query: str,
@@ -66,7 +141,9 @@ def hybrid_search(
     bm25_limit: int = 200,
     vector_limit: int = 50,
     rrf_k: int = 60,
-    min_bm25_score: float = 0.0
+    min_bm25_score: float = 0.0,
+    target_price: float = None,
+    price_weight: float = 0.4
 ) -> List[Dict]:
     """
     Perform hybrid search combining BM25 and vector search with RRF fusion.
@@ -165,7 +242,22 @@ def hybrid_search(
         k=rrf_k
     )
 
-    # Step 5: Retrieve property details for top results
+    # Step 4.5: Price-weighted reranking (fetch more for reranking)
+    # Fetch 2x limit properties for reranking to ensure diversity
+    rerank_limit = limit * 3
+    top_ids_for_rerank = [prop_id for prop_id, _ in fused_results[:rerank_limit]]
+    properties_for_rerank = db.query(Property).filter(Property.id.in_(top_ids_for_rerank)).all()
+
+    if target_price is not None or price_weight > 0:
+        logger.info(f"Applying price-weighted reranking (weight={price_weight})")
+        fused_results = price_weighted_rerank(
+            fused_results=fused_results[:rerank_limit],
+            properties=properties_for_rerank,
+            target_price=target_price,
+            price_weight=price_weight
+        )
+
+    # Step 5: Retrieve property details for top results after reranking
     top_ids = [prop_id for prop_id, _ in fused_results[:limit]]
     properties = db.query(Property).filter(Property.id.in_(top_ids)).all()
 

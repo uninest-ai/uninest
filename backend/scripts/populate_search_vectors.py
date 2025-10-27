@@ -54,18 +54,14 @@ def populate_search_vectors():
         # Populate search_vector
         print(f"\n2. Populating search_vector for {before_null} properties...")
 
-        # Use extended_description if description is empty
+        # Include both description AND extended_description for maximum searchability
+        # This ensures AI-generated keywords are searchable
         db.execute(text("""
             UPDATE properties
             SET search_vector =
                 setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
-                setweight(to_tsvector('english',
-                    COALESCE(
-                        NULLIF(description, ''),
-                        extended_description,
-                        ''
-                    )
-                ), 'B') ||
+                setweight(to_tsvector('english', COALESCE(description, '')), 'B') ||
+                setweight(to_tsvector('english', COALESCE(extended_description, '')), 'B') ||
                 setweight(to_tsvector('english', COALESCE(address, '')), 'C') ||
                 setweight(to_tsvector('english', COALESCE(city, '')), 'C')
             WHERE search_vector IS NULL

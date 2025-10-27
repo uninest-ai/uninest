@@ -26,12 +26,13 @@ def upgrade() -> None:
         ADD COLUMN search_vector tsvector;
     """)
 
-    # Populate tsvector column with title + description
+    # Populate tsvector column with title + description + extended_description
     op.execute("""
         UPDATE properties
         SET search_vector =
             setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-            setweight(to_tsvector('english', coalesce(description, '')), 'B');
+            setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
+            setweight(to_tsvector('english', coalesce(extended_description, '')), 'B');
     """)
 
     # Create GIN index for fast full-text search
@@ -41,13 +42,15 @@ def upgrade() -> None:
     """)
 
     # Create trigger to auto-update tsvector on INSERT/UPDATE
+    # Includes extended_description for AI-generated keywords
     op.execute("""
         CREATE OR REPLACE FUNCTION properties_search_vector_trigger()
         RETURNS trigger AS $$
         BEGIN
             NEW.search_vector :=
                 setweight(to_tsvector('english', coalesce(NEW.title, '')), 'A') ||
-                setweight(to_tsvector('english', coalesce(NEW.description, '')), 'B');
+                setweight(to_tsvector('english', coalesce(NEW.description, '')), 'B') ||
+                setweight(to_tsvector('english', coalesce(NEW.extended_description, '')), 'B');
             RETURN NEW;
         END
         $$ LANGUAGE plpgsql;
