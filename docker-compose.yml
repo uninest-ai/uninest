@@ -12,7 +12,7 @@ services:
       - sentence_transformers_cache:/root/.cache/torch/sentence_transformers
     environment:
       # Use local database instead of RDS
-      - DATABASE_URL=postgresql://uninest_admin:UniNest070809@uninest-db.c9aes4a2k2n8.us-east-2.rds.amazonaws.com:5432/un>
+      - DATABASE_URL=DATABASE_URL=postgresql://uninest_admin:UniNest070809@uninest-db.c9aes4a2k2n8.us-east-2.rds.amazonaws.com:5432/uninest
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
