@@ -703,7 +703,7 @@ class MultiSourceFetcher:
         image_urls: List[str]
     ) -> None:
         """
-        Enrich property description using Gemini AI.
+        Enrich property description using Gemini AI with rate limiting.
 
         Args:
             db: Database session
@@ -712,6 +712,23 @@ class MultiSourceFetcher:
         """
         try:
             enrichment_service = get_enrichment_service()
+
+            # Rate limiting: Check if we've exceeded quota for this batch
+            if enrichment_service.enrichment_count >= enrichment_service.max_enrichments_per_fetch:
+                logger.info(f"Skipping enrichment for property {property_obj.id} (quota: {enrichment_service.enrichment_count}/{enrichment_service.max_enrichments_per_fetch})")
+                return
+
+            # Skip properties with minimal data (not worth enrichment)
+            if not property_obj.description or len(property_obj.description) < 20:
+                logger.debug(f"Skipping enrichment for property {property_obj.id} (insufficient data)")
+                return
+
+            # Rate limiting: Sleep 5 seconds between enrichments (12 per minute < 15 RPM limit)
+            if enrichment_service.enrichment_count > 0:
+                time.sleep(5)
+
+            # Increment counter
+            enrichment_service.enrichment_count += 1
 
             # Prepare property data for enrichment
             property_data = {
@@ -744,7 +761,7 @@ class MultiSourceFetcher:
                     ) + keywords_text
 
                 db.commit()
-                logger.info(f"Enriched property {property_obj.id} with Gemini AI")
+                logger.info(f"Enriched property {property_obj.id} with Gemini AI ({enrichment_service.enrichment_count}/{enrichment_service.max_enrichments_per_fetch})")
 
         except Exception as e:
             logger.error(f"Failed to enrich property {property_obj.id}: {e}")

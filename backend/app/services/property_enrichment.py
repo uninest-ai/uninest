@@ -19,13 +19,21 @@ class PropertyEnrichmentService:
 
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY
+        self.enrichment_count = 0  # Track enrichments for rate limiting
+        self.max_enrichments_per_fetch = 10  # Limit to avoid quota
+
         if self.api_key:
             genai.configure(api_key=self.api_key)
-            self.client = genai.GenerativeModel('gemini-2.5-flash')
-            logger.info("PropertyEnrichmentService: Gemini initialized")
+            # Use gemini-2.0-flash: 15 RPM limit (vs 2.5-flash: 10 RPM)
+            self.client = genai.GenerativeModel('gemini-2.0-flash')
+            logger.info("PropertyEnrichmentService: Gemini 2.0 Flash initialized (15 RPM limit)")
         else:
             self.client = None
             logger.warning("PropertyEnrichmentService: No GEMINI_API_KEY found")
+
+    def reset_enrichment_count(self):
+        """Reset the enrichment counter (call at start of new fetch)"""
+        self.enrichment_count = 0
 
     def enrich_property_description(
         self,
