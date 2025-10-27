@@ -80,34 +80,25 @@ class PropertyEnrichmentService:
 
         amenities_text = ', '.join(amenities) if amenities else 'No specific amenities listed'
 
-        prompt = f"""
-You are a professional real estate copywriter. Generate a compelling, searchable property description.
+        prompt = f"""Generate a concise property listing description in JSON format.
 
-**Property Information:**
-- Title: {title}
-- Type: {prop_type}
-- Bedrooms: {bedrooms}
-- Bathrooms: {bathrooms}
-- Price: ${price}/month
-- Address: {address}
-- Original Description: {description}
-- Additional Details: {extended_desc}
-- Amenities: {amenities_text}
+Property: {title} | {bedrooms}BR/{bathrooms}BA {prop_type} | ${price}/mo
+Address: {address}
+Amenities: {amenities_text}
+Current info: {description[:200]}
 
-**Task:** Generate a rich, detailed property description (200-300 words) that:
-1. Highlights key features and amenities in natural language
-2. Includes searchable keywords (modern, spacious, quiet, parking, laundry, etc.)
-3. Mentions neighborhood characteristics if relevant
-4. Emphasizes value and lifestyle benefits
-5. Uses engaging, professional real estate language
-
-**Format your response as JSON:**
+Output JSON (no markdown, no code blocks):
 {{
-  "enriched_description": "Your compelling 200-300 word description here",
-  "search_keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
+  "enriched_description": "150-200 word professional description highlighting: location benefits, key features, amenities, lifestyle appeal",
+  "search_keywords": ["list", "5-8", "searchable", "keywords"]
 }}
 
-**Important:** Return ONLY valid JSON, no markdown formatting, no ```json``` tags.
+Requirements:
+- Professional real estate tone
+- Focus on searchable features (parking, laundry, transit, quiet, modern, spacious, etc.)
+- Emphasize value and lifestyle
+- Exactly 150-200 words
+- Return ONLY the JSON object
 """
         return prompt
 
@@ -118,7 +109,7 @@ You are a professional real estate copywriter. Generate a compelling, searchable
                 prompt,
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.7,
-                    max_output_tokens=800,
+                    max_output_tokens=1200,  # Increased for 200-300 word descriptions + JSON
                 ),
                 safety_settings=[
                     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -130,15 +121,23 @@ You are a professional real estate copywriter. Generate a compelling, searchable
 
             # Check if response was blocked
             if not response.candidates or len(response.candidates) == 0:
-                logger.warning("Gemini returned no candidates (likely blocked)")
+                logger.warning("Gemini returned no candidates")
                 return {'enriched_description': '', 'search_keywords': []}
 
             candidate = response.candidates[0]
 
-            # Check finish_reason (1=STOP (success), 2=SAFETY, 3=RECITATION, 4=OTHER)
+            # Check finish_reason (0=UNSPECIFIED, 1=STOP (success), 2=MAX_TOKENS, 3=SAFETY, 4=RECITATION, 5=OTHER)
             if hasattr(candidate, 'finish_reason') and candidate.finish_reason != 1:
-                logger.warning(f"Gemini blocked response (finish_reason={candidate.finish_reason})")
-                return {'enriched_description': '', 'search_keywords': []}
+                reason_map = {0: "UNSPECIFIED", 1: "STOP", 2: "MAX_TOKENS", 3: "SAFETY", 4: "RECITATION", 5: "OTHER"}
+                reason_name = reason_map.get(candidate.finish_reason, f"UNKNOWN({candidate.finish_reason})")
+                logger.warning(f"Gemini incomplete response (finish_reason={reason_name})")
+
+                # If MAX_TOKENS, we might still have partial content - try to use it
+                if candidate.finish_reason == 2 and hasattr(candidate, 'content') and candidate.content.parts:
+                    logger.info("Attempting to parse partial response from MAX_TOKENS")
+                    # Continue to parsing - might still get useful content
+                else:
+                    return {'enriched_description': '', 'search_keywords': []}
 
             # Check if content exists
             if not hasattr(candidate, 'content') or not candidate.content.parts:
@@ -181,7 +180,7 @@ You are a professional real estate copywriter. Generate a compelling, searchable
                 [enhanced_prompt, image],
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.7,
-                    max_output_tokens=800,
+                    max_output_tokens=1200,  # Increased for image analysis + description
                 ),
                 safety_settings=[
                     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -193,12 +192,14 @@ You are a professional real estate copywriter. Generate a compelling, searchable
 
             # Check if response was blocked
             if not response.candidates or len(response.candidates) == 0:
-                logger.warning("Gemini image analysis blocked, falling back to text-only")
+                logger.warning("Gemini image analysis: no candidates, falling back to text-only")
                 return self._enrich_text_only(prompt)
 
             candidate = response.candidates[0]
             if hasattr(candidate, 'finish_reason') and candidate.finish_reason != 1:
-                logger.warning(f"Gemini image analysis blocked (finish_reason={candidate.finish_reason}), falling back to text-only")
+                reason_map = {0: "UNSPECIFIED", 1: "STOP", 2: "MAX_TOKENS", 3: "SAFETY", 4: "RECITATION", 5: "OTHER"}
+                reason_name = reason_map.get(candidate.finish_reason, f"UNKNOWN({candidate.finish_reason})")
+                logger.warning(f"Gemini image analysis incomplete (finish_reason={reason_name}), falling back to text-only")
                 return self._enrich_text_only(prompt)
 
             if not hasattr(candidate, 'content') or not candidate.content.parts:
