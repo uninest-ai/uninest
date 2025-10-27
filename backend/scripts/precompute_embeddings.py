@@ -107,11 +107,44 @@ def precompute_embeddings(
                         processed += 1
                         continue
 
-                    # Combine title and description for embedding
-                    text_to_embed = f"{prop.title or ''} {prop.description or ''}".strip()
+                    # Combine available textual fields for richer embeddings
+                    amenities_text = ""
+                    if prop.api_amenities:
+                        if isinstance(prop.api_amenities, list):
+                            amenities_text = " ".join(filter(None, prop.api_amenities))
+                        elif isinstance(prop.api_amenities, dict):
+                            amenities_text = " ".join(
+                                str(value) for value in prop.api_amenities.values() if value
+                            )
+                        else:
+                            amenities_text = str(prop.api_amenities)
+
+                    labels_text = ""
+                    if prop.labels:
+                        if isinstance(prop.labels, list):
+                            labels_text = " ".join(filter(None, prop.labels))
+                        elif isinstance(prop.labels, dict):
+                            labels_text = " ".join(
+                                str(value) for value in prop.labels.values() if value
+                            )
+                        else:
+                            labels_text = str(prop.labels)
+
+                    text_parts = [
+                        prop.title or "",
+                        prop.description or "",
+                        prop.extended_description or "",
+                        prop.address or "",
+                        prop.city or "",
+                        amenities_text,
+                        labels_text,
+                    ]
+                    text_to_embed = " ".join(part.strip() for part in text_parts if part).strip()
 
                     if not text_to_embed:
-                        logger.warning(f"Property {prop.id} has no text content, skipping")
+                        logger.warning(
+                            f"Property {prop.id} has no usable text content, skipping embedding"
+                        )
                         skipped += 1
                         processed += 1
                         continue
