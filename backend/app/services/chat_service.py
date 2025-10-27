@@ -99,8 +99,43 @@ class ChatService:
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.7,
                     max_output_tokens=1000,
-                )
+                ),
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                ]
             )
+
+            # Check if response was blocked or has no content
+            if not response.candidates or len(response.candidates) == 0:
+                print("Gemini returned no candidates (likely blocked)")
+                return {
+                    "response": "Sorry, I couldn't process that request. Please try rephrasing your message.",
+                    "preferences": []
+                }
+
+            candidate = response.candidates[0]
+
+            # Check finish_reason (1=STOP is success, 2=SAFETY, 3=MAX_TOKENS, etc.)
+            if hasattr(candidate, 'finish_reason') and candidate.finish_reason != 1:
+                reason_map = {0: "UNSPECIFIED", 1: "STOP", 2: "SAFETY", 3: "MAX_TOKENS", 4: "RECITATION", 5: "OTHER"}
+                reason_name = reason_map.get(candidate.finish_reason, f"UNKNOWN({candidate.finish_reason})")
+                print(f"Gemini response blocked or incomplete (finish_reason={reason_name})")
+                return {
+                    "response": "Sorry, I couldn't process that request. Please try rephrasing your message.",
+                    "preferences": []
+                }
+
+            # Check if content exists
+            if not hasattr(candidate, 'content') or not candidate.content.parts:
+                print("Gemini response has no content")
+                return {
+                    "response": "Sorry, I encountered an error. Please try again.",
+                    "preferences": []
+                }
+
             bot_response = response.text
         except Exception as e:
             print(f"Gemini API error: {e}")

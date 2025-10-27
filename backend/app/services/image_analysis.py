@@ -70,7 +70,43 @@ class SimpleImageAnalysisService:
             image = PIL.Image.open(io.BytesIO(image_bytes))
 
             # Generate content with Gemini
-            response = self.client.generate_content([prompt, image])
+            response = self.client.generate_content(
+                [prompt, image],
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                ]
+            )
+
+            # Check if response was blocked or has no content
+            if not response.candidates or len(response.candidates) == 0:
+                print("Gemini returned no candidates (likely blocked)")
+                return {
+                    "status": "error",
+                    "message": "Image analysis was blocked. Please try a different image."
+                }
+
+            candidate = response.candidates[0]
+
+            # Check finish_reason (1=STOP is success, 2=SAFETY, 3=MAX_TOKENS, etc.)
+            if hasattr(candidate, 'finish_reason') and candidate.finish_reason != 1:
+                reason_map = {0: "UNSPECIFIED", 1: "STOP", 2: "SAFETY", 3: "MAX_TOKENS", 4: "RECITATION", 5: "OTHER"}
+                reason_name = reason_map.get(candidate.finish_reason, f"UNKNOWN({candidate.finish_reason})")
+                print(f"Gemini response blocked or incomplete (finish_reason={reason_name})")
+                return {
+                    "status": "error",
+                    "message": f"Image analysis incomplete (reason: {reason_name}). Please try a different image."
+                }
+
+            # Check if content exists
+            if not hasattr(candidate, 'content') or not candidate.content.parts:
+                print("Gemini response has no content")
+                return {
+                    "status": "error",
+                    "message": "No content returned from image analysis."
+                }
 
             # Extract content
             content = response.text
