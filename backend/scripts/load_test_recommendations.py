@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Configuration
-VITE_API_BASE_URL = os.getenv("VITE_API_BASE_URL", "http://localhost:8000")
+VITE_API_BASE_URL = os.getenv("VITE_API_BASE_URL", "http://3.145.189.113:8000")
 SECRET_KEY = os.getenv("SECRET_KEY", "")  # Set this to your JWT token
 TOTAL_REQUESTS = 200
 CONCURRENT_WORKERS = 10
