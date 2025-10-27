@@ -14,7 +14,7 @@ class SimpleImageAnalysisService:
         if self.gemini_key:
             try:
                 genai.configure(api_key=self.gemini_key)
-                self.client = genai.GenerativeModel('gemini-1.5-flash-latest')
+                self.client = genai.GenerativeModel('gemini-2.5-flash')
                 self.client_type = "gemini"
                 print("Gemini client initialized successfully (cost-effective!)")
             except Exception as e:

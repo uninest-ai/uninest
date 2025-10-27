@@ -15,7 +15,7 @@ class ChatService:
         self.api_key = settings.GEMINI_API_KEY
         if self.api_key:
             genai.configure(api_key=self.api_key)
-            self.client = genai.GenerativeModel('gemini-1.5-flash-latest')
+            self.client = genai.GenerativeModel('gemini-2.5-flash')
             print("ChatService: Gemini initialized (cost-effective!)")
         else:
             self.client = None
