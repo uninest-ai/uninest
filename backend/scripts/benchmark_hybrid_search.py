@@ -130,7 +130,6 @@ def get_ground_truth_relevant_properties(
 
 
 def benchmark_single_query(
-    db: Session,
     query: str,
     method: str = "hybrid"
 ) -> Dict:
@@ -145,26 +144,30 @@ def benchmark_single_query(
     Returns:
         Dictionary with latency and result IDs
     """
-    start_time = time.perf_counter()
+    db = SessionLocal()
+    try:
+        start_time = time.perf_counter()
 
-    if method == "hybrid":
-        results = hybrid_search_simple(db=db, query=query, limit=10)
-        result_ids = [r["id"] for r in results]
-    elif method == "bm25":
-        bm25_results = bm25_search_properties_ids_only(db=db, query=query, limit=10)
-        result_ids = [pid for pid, _ in bm25_results]
-    else:  # vector only
-        # For vector-only, we'd need to implement this separately
-        # For now, fall back to hybrid
-        results = hybrid_search_simple(db=db, query=query, limit=10)
-        result_ids = [r["id"] for r in results]
+        if method == "hybrid":
+            results = hybrid_search_simple(db=db, query=query, limit=10)
+            result_ids = [r["id"] for r in results]
+        elif method == "bm25":
+            bm25_results = bm25_search_properties_ids_only(db=db, query=query, limit=10)
+            result_ids = [pid for pid, _ in bm25_results]
+        else:  # vector only
+            # For vector-only, we'd need to implement this separately
+            # For now, fall back to hybrid
+            results = hybrid_search_simple(db=db, query=query, limit=10)
+            result_ids = [r["id"] for r in results]
 
-    latency_ms = (time.perf_counter() - start_time) * 1000
+        latency_ms = (time.perf_counter() - start_time) * 1000
 
-    return {
-        "latency_ms": latency_ms,
-        "result_ids": result_ids
-    }
+        return {
+            "latency_ms": latency_ms,
+            "result_ids": result_ids
+        }
+    finally:
+        db.close()
 
 
 def run_load_test(
@@ -207,7 +210,6 @@ def run_load_test(
         for query in test_cases:
             future = executor.submit(
                 benchmark_single_query,
-                SessionLocal(),  # New session for each request
                 query,
                 "hybrid"
             )
