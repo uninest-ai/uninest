@@ -35,6 +35,151 @@ class SyntheticDataGenerator:
             {"name": "Friendship", "lat": 40.4583, "lng": -79.9398, "avg_rent": 1550}
         ]
 
+    def generate_synthetic_landlords(self, db: Session, count: int = 5) -> Dict:
+        """
+        Generate synthetic landlord profiles and users for testing
+
+        WARNING: This generates FAKE landlords/users for testing purposes only.
+
+        Args:
+            db: Database session
+            count: Number of synthetic landlords to create (max 8 neighborhoods)
+
+        Returns:
+            Dictionary with created landlords info
+        """
+        created_landlords = []
+        created_users = []
+        errors = []
+
+        neighborhoods_to_use = self.pittsburgh_neighborhoods[:min(count, len(self.pittsburgh_neighborhoods))]
+
+        for neighborhood in neighborhoods_to_use:
+            try:
+                landlord = self._get_or_create_area_landlord(db, neighborhood['name'])
+                if landlord:
+                    created_landlords.append({
+                        'id': landlord.id,
+                        'company_name': landlord.company_name,
+                        'area': neighborhood['name']
+                    })
+            except Exception as e:
+                errors.append(f"Error creating landlord for {neighborhood['name']}: {str(e)}")
+                logger.error(f"Error creating synthetic landlord: {e}")
+                continue
+
+        return {
+            'success': True,
+            'landlords_created': len(created_landlords),
+            'landlords': created_landlords,
+            'errors': errors
+        }
+
+    def generate_synthetic_properties_only(
+        self,
+        db: Session,
+        properties_per_landlord: int = 2,
+        landlord_limit: int = None
+    ) -> Dict:
+        """
+        Generate synthetic properties for existing landlords
+
+        WARNING: This generates FAKE properties for testing purposes only.
+        Use existing landlords (synthetic or real) to attach properties to.
+
+        Args:
+            db: Database session
+            properties_per_landlord: Number of properties per landlord
+            landlord_limit: Max number of landlords to use (None = all)
+
+        Returns:
+            Dictionary with created properties info
+        """
+        properties_list = []
+        saved_count = 0
+        errors = []
+
+        # Get existing landlords (prefer synthetic ones)
+        landlords = db.query(LandlordProfile).filter(
+            LandlordProfile.api_source == 'synthetic_test_data'
+        ).limit(landlord_limit).all() if landlord_limit else db.query(LandlordProfile).filter(
+            LandlordProfile.api_source == 'synthetic_test_data'
+        ).all()
+
+        if not landlords:
+            return {
+                'success': False,
+                'error': 'No synthetic landlords found. Run generate_synthetic_landlords first.',
+                'saved_count': 0,
+                'properties': []
+            }
+
+        for landlord in landlords:
+            # Find neighborhood from company name
+            neighborhood_name = landlord.company_name.replace(' Property Management [TEST DATA]', '')
+            neighborhood = next(
+                (n for n in self.pittsburgh_neighborhoods if n['name'] == neighborhood_name),
+                self.pittsburgh_neighborhoods[0]  # fallback
+            )
+
+            for i in range(properties_per_landlord):
+                try:
+                    property_data = self._generate_neighborhood_property(neighborhood, i)
+
+                    # Check for duplicates
+                    existing = db.query(Property).filter(
+                        Property.address == property_data['address'],
+                        Property.landlord_id == landlord.id
+                    ).first()
+
+                    if existing:
+                        continue
+
+                    # Create property
+                    new_property = Property(
+                        title=property_data['title'],
+                        price=property_data['price'],
+                        description=property_data['description'],
+                        property_type=property_data['property_type'],
+                        bedrooms=property_data['bedrooms'],
+                        bathrooms=property_data['bathrooms'],
+                        area=property_data['area'],
+                        address=property_data['address'],
+                        city="Pittsburgh",
+                        latitude=property_data['latitude'],
+                        longitude=property_data['longitude'],
+                        landlord_id=landlord.id,
+                        is_active=True,
+                        api_source='synthetic_test_data',
+                        extended_description='WARNING: This is synthetic test data, not a real property listing.'
+                    )
+
+                    db.add(new_property)
+                    db.commit()
+                    db.refresh(new_property)
+
+                    saved_count += 1
+                    properties_list.append({
+                        'id': new_property.id,
+                        'title': property_data['title'],
+                        'price': property_data['price'],
+                        'address': property_data['address'],
+                        'landlord': landlord.company_name
+                    })
+
+                except Exception as e:
+                    db.rollback()
+                    errors.append(f"Error creating property: {str(e)}")
+                    logger.error(f"Error generating synthetic property: {e}")
+                    continue
+
+        return {
+            'success': True,
+            'saved_count': saved_count,
+            'properties': properties_list,
+            'errors': errors
+        }
+
     def generate_synthetic_properties(self, db: Session, limit: int = 10) -> Dict:
         """
         Generate synthetic Pittsburgh housing data for testing
