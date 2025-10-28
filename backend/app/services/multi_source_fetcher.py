@@ -95,21 +95,15 @@ class MultiSourceFetcher:
             "X-RapidAPI-Host": "realtor-search.p.rapidapi.com"
         }
 
-        # Search by location (New York City) instead of agent
-        # url = "https://realtor-search.p.rapidapi.com/properties/v3/list"
-        # params = {
-        #     "city": "New York",
-        #     "state_code": "NY",
-        #     "limit": str(limit),
-        #     "offset": "0",
-        #     "postal_code": "",  # Search entire NYC area
-        #     "status": ["for_sale", "for_rent"],  # Include both
-        #     "sort": "newest"
-        # }
-        url = f"https://realtor-search.p.rapidapi.com/agents/v2/listings"
+        # Search by location (New York City) directly
+        url = "https://realtor-search.p.rapidapi.com/properties/v3/list"
         params = {
-            "fulfillmentId": fulfillment_id,
-            "limit": str(limit)
+            "city": "New York",
+            "state_code": "NY",
+            "limit": str(limit),
+            "offset": "0",
+            "status": ["for_rent", "for_sale"],  # Only rent listings
+            "sort": "newest"
         }
 
 
