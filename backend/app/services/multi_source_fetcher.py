@@ -79,19 +79,7 @@ class MultiSourceFetcher:
                 results['api_sources_used'].append('realty_mole')
         except Exception as e:
             results['errors'].append(f"Realty Mole API error: {str(e)}")
-            
-        # Fetch from tertiary source (Custom Pittsburgh data)
-        try:
-            time.sleep(1)  # Rate limiting
-            custom_result = self._fetch_custom_pittsburgh_data(db, limit // 4)
-            if custom_result['success']:
-                results['total_fetched'] += custom_result.get('total_fetched', 0)
-                results['saved_count'] += custom_result.get('saved_count', 0)
-                results['properties'].extend(custom_result.get('properties', []))
-                results['api_sources_used'].append('custom_pittsburgh')
-        except Exception as e:
-            results['errors'].append(f"Custom Pittsburgh data error: {str(e)}")
-            
+
         return results
     
     def _fetch_from_realtor16(self, db: Session, limit: int) -> Dict:
@@ -507,7 +495,7 @@ class MultiSourceFetcher:
         return {
             'title': f"{bedrooms}BR/{bathrooms}BA {property_type.title()} in {neighborhood['name']}",
             'price': price,
-            'description': f"Beautiful {property_type} in {neighborhood['name']} neighborhood\n\nClose to CMU and University of Pittsburgh\nWalking distance to public transportation\nNear restaurants and shopping\n\nThis {property_type} offers modern amenities and great location for students and professionals.",
+            'description': f"{property_type} in {neighborhood['name']} neighborhood\n",
             'property_type': property_type,
             'bedrooms': bedrooms,
             'bathrooms': bathrooms,

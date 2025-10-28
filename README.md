@@ -11,6 +11,28 @@ UniNest pairs a traditional BM25 keyword engine with semantic vector search, pru
 ## Intention
 UniNest is a full-stack web application designed to help students find housing recommendations near CMU. The platform features AI-powered chat assistance, intelligent image analysis for housing preferences, and roommate matching functionality.
 
+### Feature Screenshots
+### User Register and Login
+![User Register Feature](demo-recording/register.gif)
+
+### AI Image Analysis and Chat Assistant for Preferences
+![Chat Feature](demo-recording/ai-preference.gif)
+![User Preference Result](demo-recording/user-preference.gif)
+
+### Property Recommendations
+![Recommendations](demo-recording/recommendation.gif)
+
+### Potential Roommate Message
+![Roommate Matching](demo-recording/message.gif)
+
+### Landlord Register
+![Landlord Register](demo-recording/landlord-register.gif)
+
+### Landlord log properties
+![Log Properties](demo-recording/log-properties.gif)
+---
+
+
 ## Technical Implementation Framework
 - **Backend**: FastAPI (Python) + PostgreSQL
 - **Frontend**: React + Vite + Tailwind CSS
@@ -96,6 +118,11 @@ Current system performance (193 properties):
 | **p95 Latency** | ~50ms | < 150ms |
 | **QPS** | ~40 req/s | > 50 req/s |
 
+**Ground Truth Strategy:**
+- Relevance is determined by **keyword matching**: properties containing test query keywords (e.g., "Oakland", "garage") in address/description are marked as relevant
+- **Limitations**: (1) Keyword-biased (favors BM25 over semantic search), (2) No human judgment of actual relevance, (3) Ignores query constraints like price/bedrooms/bathrooms, (4) Binary relevance only (no graded scores)
+- This provides automated baseline metrics but may not reflect true user satisfaction
+
 **Run benchmarks:**
 ```bash
 cd backend
@@ -124,25 +151,5 @@ python scripts/benchmark_hybrid_search.py
 
 ---
 
-## Feature Screenshots
-### User Register and Login
-![User Register Feature](demo-recording/register.gif)
-
-### AI Image Analysis and Chat Assistant for Preferences
-![Chat Feature](demo-recording/ai-preference.gif)
-![User Preference Result](demo-recording/user-preference.gif)
-
-### Property Recommendations
-![Recommendations](demo-recording/recommendation.gif)
-
-### Potential Roommate Message
-![Roommate Matching](demo-recording/message.gif)
-
-### Landlord Register
-![Landlord Register](demo-recording/landlord-register.gif)
-
-### Landlord log properties
-![Log Properties](demo-recording/log-properties.gif)
----
 
 *Built to simplify the housing search process through intelligent recommendations and AI assistance.*

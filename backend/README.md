@@ -647,7 +647,7 @@ print(f'API Key configured: {bool(api_key)}')
 ---
 
 ## Server Information
-连接command:
+Connect ssh
 ```
 ssh -i ~/.ssh/uninest_mykey_new.pem ec2-user@3.145.189.113
 ```
