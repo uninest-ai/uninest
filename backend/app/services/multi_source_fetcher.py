@@ -83,82 +83,53 @@ class MultiSourceFetcher:
 
         return results
     
-    def _fetch_from_realtor_search(self, db: Session, limit: int, fulfillment_id: str = None) -> Dict:
+    def _fetch_from_realtor_search(self, db: Session, limit: int, fulfillment_id: str = "3008020") -> Dict: # "3008020" "id":"city:ny_new-york" 
         """
         Fetch data from Realtor Search API (realtor-search.p.rapidapi.com)
 
-        First searches for NYC agents, then fetches their listings.
+        This uses the newer realtor-search API which has better data quality.
+        Response structure: data.home_search.results[]
         """
         headers = {
             "X-RapidAPI-Key": self.rapidapi_key,
             "X-RapidAPI-Host": "realtor-search.p.rapidapi.com"
         }
 
-        # Step 1: Search for NYC agents to get fulfillment IDs
-        if not fulfillment_id:
-            logger.info("Searching for NYC agents to get fulfillment IDs...")
-            agent_search_url = "https://realtor-search.p.rapidapi.com/agents/v2/search-location"
-            agent_params = {"query": "new york"}
-
-            try:
-                agent_response = requests.get(agent_search_url, headers=headers, params=agent_params, timeout=10)
-
-                if agent_response.status_code == 200:
-                    agent_data = agent_response.json()
-                    logger.info(f"Agent search response keys: {agent_data.keys() if agent_data else 'None'}")
-
-                    # Extract fulfillment IDs from agents
-                    agents = agent_data.get('agents', [])
-                    if agents:
-                        # Get the first active NYC agent's fulfillment ID
-                        for agent in agents[:5]:  # Check first 5 agents
-                            fid = agent.get('fulfillment_id')
-                            if fid:
-                                fulfillment_id = fid
-                                logger.info(f"Found NYC agent fulfillment ID: {fulfillment_id}")
-                                break
-
-                    if not fulfillment_id:
-                        logger.warning("No fulfillment ID found from agent search")
-                        return {'success': True, 'total_fetched': 0, 'saved_count': 0, 'properties': []}
-                else:
-                    logger.error(f"Agent search failed: {agent_response.status_code}")
-            except Exception as e:
-                logger.error(f"Error searching for agents: {e}")
-                return {'success': False, 'error': f'Agent search failed: {str(e)}'}
-
-        # Step 2: Fetch listings from the agent
-        logger.info(f"Fetching listings for fulfillment ID: {fulfillment_id}")
-        url = "https://realtor-search.p.rapidapi.com/agents/v2/listings"
+        # Search by location (New York City) instead of agent
+        # url = "https://realtor-search.p.rapidapi.com/properties/v3/list"
+        # params = {
+        #     "city": "New York",
+        #     "state_code": "NY",
+        #     "limit": str(limit),
+        #     "offset": "0",
+        #     "postal_code": "",  # Search entire NYC area
+        #     "status": ["for_sale", "for_rent"],  # Include both
+        #     "sort": "newest"
+        # }
+        url = f"https://realtor-search.p.rapidapi.com/agents/v2/listings"
         params = {
             "fulfillmentId": fulfillment_id,
             "limit": str(limit)
         }
 
-        logger.info(f"Fetching from Realtor Search API: {url}")
-        logger.info(f"Parameters: {params}")
 
         try:
             response = requests.get(url, headers=headers, params=params, timeout=10)
-            logger.info(f"API Response Status: {response.status_code}")
 
             if response.status_code != 200:
-                logger.error(f"Realtor Search API error: {response.status_code} - {response.text[:500]}")
+                logger.error(f"Realtor Search API error: {response.status_code} - {response.text[:200]}")
                 return {'success': False, 'error': f'API call failed: {response.status_code}'}
 
             data = response.json()
-            logger.info(f"API Response Keys: {data.keys() if data else 'None'}")
 
-            # API structure: data.home_search.results
+            # New API structure: data.home_search.results
             if not data.get('status'):
-                logger.error(f"API returned error status. Full response: {data}")
                 return {'success': False, 'error': 'API returned error status'}
 
             results = data.get('data', {}).get('home_search', {}).get('results', [])
-            logger.info(f"API returned {len(results)} results")
 
             if not results:
-                logger.warning(f"Realtor Search API returned 0 results for fulfillment ID: {fulfillment_id}")
+                logger.warning("Realtor Search API returned 0 results")
                 return {'success': True, 'total_fetched': 0, 'saved_count': 0, 'properties': []}
 
             logger.info(f"Realtor Search API returned {len(results)} properties")
