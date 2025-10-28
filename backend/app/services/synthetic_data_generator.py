@@ -24,15 +24,15 @@ class SyntheticDataGenerator:
     """
 
     def __init__(self):
-        self.pittsburgh_neighborhoods = [
-            {"name": "Oakland", "lat": 40.4418, "lng": -79.9561, "avg_rent": 1400},
-            {"name": "Shadyside", "lat": 40.4520, "lng": -79.9343, "avg_rent": 1600},
-            {"name": "Squirrel Hill", "lat": 40.4384, "lng": -79.9221, "avg_rent": 1350},
-            {"name": "Greenfield", "lat": 40.4268, "lng": -79.9390, "avg_rent": 1200},
-            {"name": "Point Breeze", "lat": 40.4446, "lng": -79.9081, "avg_rent": 1300},
-            {"name": "Regent Square", "lat": 40.4290, "lng": -79.8956, "avg_rent": 1450},
-            {"name": "Bloomfield", "lat": 40.4633, "lng": -79.9496, "avg_rent": 1250},
-            {"name": "Friendship", "lat": 40.4583, "lng": -79.9398, "avg_rent": 1550}
+        self.nyc_neighborhoods = [
+            {"name": "Manhattan", "lat": 40.7831, "lng": -73.9712, "avg_rent": 3500},
+            {"name": "Brooklyn", "lat": 40.6782, "lng": -73.9442, "avg_rent": 2800},
+            {"name": "Queens", "lat": 40.7282, "lng": -73.7949, "avg_rent": 2400},
+            {"name": "Bronx", "lat": 40.8448, "lng": -73.8648, "avg_rent": 2000},
+            {"name": "Upper East Side", "lat": 40.7736, "lng": -73.9566, "avg_rent": 4200},
+            {"name": "Upper West Side", "lat": 40.7870, "lng": -73.9754, "avg_rent": 3900},
+            {"name": "East Village", "lat": 40.7265, "lng": -73.9815, "avg_rent": 3200},
+            {"name": "Williamsburg", "lat": 40.7081, "lng": -73.9571, "avg_rent": 3000}
         ]
 
     def generate_synthetic_landlords(self, db: Session, count: int = 5) -> Dict:
@@ -52,7 +52,7 @@ class SyntheticDataGenerator:
         created_users = []
         errors = []
 
-        neighborhoods_to_use = self.pittsburgh_neighborhoods[:min(count, len(self.pittsburgh_neighborhoods))]
+        neighborhoods_to_use = self.nyc_neighborhoods[:min(count, len(self.nyc_neighborhoods))]
 
         for neighborhood in neighborhoods_to_use:
             try:
@@ -118,8 +118,8 @@ class SyntheticDataGenerator:
             # Find neighborhood from company name
             neighborhood_name = landlord.company_name.replace(' Property Management [TEST DATA]', '')
             neighborhood = next(
-                (n for n in self.pittsburgh_neighborhoods if n['name'] == neighborhood_name),
-                self.pittsburgh_neighborhoods[0]  # fallback
+                (n for n in self.nyc_neighborhoods if n['name'] == neighborhood_name),
+                self.nyc_neighborhoods[0]  # fallback
             )
 
             for i in range(properties_per_landlord):
@@ -145,7 +145,7 @@ class SyntheticDataGenerator:
                         bathrooms=property_data['bathrooms'],
                         area=property_data['area'],
                         address=property_data['address'],
-                        city="Pittsburgh",
+                        city="New York",
                         latitude=property_data['latitude'],
                         longitude=property_data['longitude'],
                         landlord_id=landlord.id,
@@ -182,7 +182,7 @@ class SyntheticDataGenerator:
 
     def generate_synthetic_properties(self, db: Session, limit: int = 10) -> Dict:
         """
-        Generate synthetic Pittsburgh housing data for testing
+        Generate synthetic NYC housing data for testing
 
         WARNING: This generates FAKE data for testing purposes only.
         Do not use for production property listings.
@@ -190,7 +190,7 @@ class SyntheticDataGenerator:
         properties_list = []
         saved_count = 0
 
-        for neighborhood in self.pittsburgh_neighborhoods[:limit]:
+        for neighborhood in self.nyc_neighborhoods[:limit]:
             try:
                 # Create diverse property types
                 for i in range(2):  # 2 properties per neighborhood
@@ -220,7 +220,7 @@ class SyntheticDataGenerator:
                         bathrooms=property_data['bathrooms'],
                         area=property_data['area'],
                         address=property_data['address'],
-                        city="Pittsburgh",
+                        city="New York",
                         latitude=property_data['latitude'],
                         longitude=property_data['longitude'],
                         landlord_id=landlord.id,
@@ -249,13 +249,13 @@ class SyntheticDataGenerator:
 
         return {
             'success': True,
-            'total_fetched': len(self.pittsburgh_neighborhoods) * 2,
+            'total_fetched': len(self.nyc_neighborhoods) * 2,
             'saved_count': saved_count,
             'properties': properties_list
         }
 
     def _generate_neighborhood_property(self, neighborhood: Dict, index: int) -> Dict:
-        """Generate realistic property data for Pittsburgh neighborhoods"""
+        """Generate realistic property data for NYC neighborhoods"""
         property_types = ['apartment', 'house', 'condo', 'townhouse']
         property_type = random.choice(property_types)
 
@@ -282,7 +282,7 @@ class SyntheticDataGenerator:
         return {
             'title': f"{bedrooms}BR/{bathrooms}BA {property_type.title()} in {neighborhood['name']}",
             'price': price,
-            'description': f"[SYNTHETIC TEST DATA] Beautiful {property_type} in {neighborhood['name']} neighborhood\n\nClose to CMU and University of Pittsburgh\nWalking distance to public transportation\nNear restaurants and shopping\n\nThis {property_type} offers modern amenities and great location for students and professionals.",
+            'description': f"[SYNTHETIC TEST DATA] Beautiful {property_type} in {neighborhood['name']} neighborhood\n\nClose to NYC universities and attractions\nWalking distance to subway stations\nNear restaurants and shopping\n\nThis {property_type} offers modern amenities and great location for students and professionals.",
             'property_type': property_type,
             'bedrooms': bedrooms,
             'bathrooms': bathrooms,
@@ -293,7 +293,7 @@ class SyntheticDataGenerator:
         }
 
     def _get_or_create_area_landlord(self, db: Session, area_name: str) -> Optional[LandlordProfile]:
-        """Get or create landlord for specific Pittsburgh area (synthetic data)"""
+        """Get or create landlord for specific NYC area (synthetic data)"""
         company_name = f"{area_name} Property Management [TEST DATA]"
 
         # Try to find existing landlord
@@ -327,7 +327,7 @@ class SyntheticDataGenerator:
                 user_id=existing_user.id,
                 company_name=company_name,
                 contact_phone=f"412-555-{random.randint(1000, 9999)}",
-                description=f"[SYNTHETIC TEST DATA] Property management in {area_name}, Pittsburgh.",
+                description=f"[SYNTHETIC TEST DATA] Property management in {area_name}, New York.",
                 verification_status=False,  # Mark as unverified since it's fake
                 api_source='synthetic_test_data'
             )

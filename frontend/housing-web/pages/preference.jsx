@@ -12,7 +12,7 @@ const PreferencePage = () => {
   });
  
   const [budget, setBudget] = useState(""); // user budget
-  const [preferredLocation, setPreferredLocation] = useState("Oakland"); // default location
+  const [preferredLocation, setPreferredLocation] = useState("Manhattan"); // default location
   const [termsAccepted, setTermsAccepted] = useState(false); // user accept terms
   const [analyzeResult, setAnalyzeResult] = useState(null); // image analysis result
   const [chatMessages, setChatMessages] = useState([
@@ -35,16 +35,16 @@ const PreferencePage = () => {
     }
   }, [navigate]);
 
-  // location and latitude and longitude mapping
+  // location and latitude and longitude mapping (NYC neighborhoods)
   const locationCoordinates = {
-    "Oakland": { lat: 40.4418, lng: -79.9561 },
-    "Shadyside": { lat: 40.4520, lng: -79.9343 },
-    "Squirrel Hill": { lat: 40.4384, lng: -79.9221 },
-    "Greenfield": { lat: 40.4268, lng: -79.9390 },
-    "Point Breeze": { lat: 40.4446, lng: -79.9081 },
-    "Regent Square": { lat: 40.4290, lng: -79.8956 },
-    "Bloomfield": { lat: 40.4633, lng: -79.9496 },
-    "Friendship": { lat: 40.4583, lng: -79.9398 },
+    "Manhattan": { lat: 40.7831, lng: -73.9712 },
+    "Brooklyn": { lat: 40.6782, lng: -73.9442 },
+    "Queens": { lat: 40.7282, lng: -73.7949 },
+    "Bronx": { lat: 40.8448, lng: -73.8648 },
+    "Upper East Side": { lat: 40.7736, lng: -73.9566 },
+    "Upper West Side": { lat: 40.7870, lng: -73.9754 },
+    "East Village": { lat: 40.7265, lng: -73.9815 },
+    "Williamsburg": { lat: 40.7081, lng: -73.9571 },
   };
   
 
@@ -166,7 +166,7 @@ const PreferencePage = () => {
         />
       </div>
       <div className="form-group">
-        <label htmlFor="preferredLocation">Preferred Location (Current version only applicable in Pittsburgh) </label>
+        <label htmlFor="preferredLocation">Preferred Location (Current version only applicable in New York) </label>
         <select
           id="preferredLocation"
           className="form-control"
