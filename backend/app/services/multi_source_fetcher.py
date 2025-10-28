@@ -56,17 +56,18 @@ class MultiSourceFetcher:
             'errors': []
         }
         
-        # Fetch from primary source (Realtor16)
+        # Fetch from primary source (Realtor Search API - NEW)
         try:
-            realtor_result = self._fetch_from_realtor16(db, limit // 2)
+            realtor_result = self._fetch_from_realtor_search(db, limit=limit)
             if realtor_result['success']:
                 results['total_fetched'] += realtor_result.get('total_fetched', 0)
                 results['saved_count'] += realtor_result.get('saved_count', 0)
                 results['created_landlords'] += realtor_result.get('created_landlords', 0)
                 results['properties'].extend(realtor_result.get('properties', []))
-                results['api_sources_used'].append('realtor16')
+                results['api_sources_used'].append('realtor_search')
         except Exception as e:
-            results['errors'].append(f"Realtor16 API error: {str(e)}")
+            results['errors'].append(f"Realtor Search API error: {str(e)}")
+            logger.error(f"Realtor Search API error: {e}")
             
         # Fetch from secondary source (Realty Mole)
         try:
@@ -82,13 +83,60 @@ class MultiSourceFetcher:
 
         return results
     
+    def _fetch_from_realtor_search(self, db: Session, limit: int, fulfillment_id: str = "3155600") -> Dict:
+        """
+        Fetch data from Realtor Search API (realtor-search.p.rapidapi.com)
+
+        This uses the newer realtor-search API which has better data quality.
+        Response structure: data.home_search.results[]
+        """
+        headers = {
+            "X-RapidAPI-Key": self.rapidapi_key,
+            "X-RapidAPI-Host": "realtor-search.p.rapidapi.com"
+        }
+
+        # Fetch properties from agent listings
+        url = f"https://realtor-search.p.rapidapi.com/agents/v2/listings"
+        params = {
+            "fulfillmentId": fulfillment_id,
+            "limit": str(limit)
+        }
+
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+
+            if response.status_code != 200:
+                logger.error(f"Realtor Search API error: {response.status_code} - {response.text[:200]}")
+                return {'success': False, 'error': f'API call failed: {response.status_code}'}
+
+            data = response.json()
+
+            # New API structure: data.home_search.results
+            if not data.get('status'):
+                return {'success': False, 'error': 'API returned error status'}
+
+            results = data.get('data', {}).get('home_search', {}).get('results', [])
+
+            if not results:
+                logger.warning("Realtor Search API returned 0 results")
+                return {'success': True, 'total_fetched': 0, 'saved_count': 0, 'properties': []}
+
+            logger.info(f"Realtor Search API returned {len(results)} properties")
+            return self._process_realtor_search_properties(db, results)
+
+        except requests.exceptions.Timeout:
+            return {'success': False, 'error': 'API request timed out'}
+        except Exception as e:
+            logger.error(f"Error fetching from Realtor Search: {e}")
+            return {'success': False, 'error': str(e)}
+
     def _fetch_from_realtor16(self, db: Session, limit: int) -> Dict:
-        """Fetch data from Realtor16 API"""
+        """Fetch data from Realtor16 API (LEGACY - prefer realtor-search)"""
         headers = {
             "X-RapidAPI-Key": self.rapidapi_key,
             "X-RapidAPI-Host": "realtor16.p.rapidapi.com"
         }
-        
+
         url = "https://realtor16.p.rapidapi.com/search/forrent/coordinates"
         params = {
             "latitude": "40.4406",    # Pittsburgh coordinates
@@ -96,15 +144,15 @@ class MultiSourceFetcher:
             "radius": "25",           # 25 mile radius
             "limit": str(limit)
         }
-        
+
         response = requests.get(url, headers=headers, params=params)
-        
+
         if response.status_code != 200:
             return {'success': False, 'error': f'API call failed: {response.status_code}'}
-            
+
         data = response.json()
         properties_data = data.get('properties', [])
-        
+
         return self._process_realtor16_properties(db, properties_data)
     
     def _fetch_from_realty_mole(self, db: Session, limit: int) -> Dict:
@@ -207,6 +255,207 @@ class MultiSourceFetcher:
             'properties': properties_list
         }
     
+    def _process_realtor_search_properties(self, db: Session, results: List[Dict]) -> Dict:
+        """
+        Process Realtor Search API property data
+
+        Maps the new API structure to our Property model:
+        - property_id -> unique identifier
+        - description -> beds, baths, sqft
+        - location -> address, coordinates
+        - list_price -> monthly rent price
+        - photos -> property images
+        - advertisers -> landlord info
+        """
+        saved_count = 0
+        created_landlords = 0
+        properties_list = []
+
+        for prop in results:
+            try:
+                # Extract nested data
+                desc = prop.get('description', {})
+                location = prop.get('location', {})
+                address_data = location.get('address', {})
+                coordinate = address_data.get('coordinate', {})
+
+                # Build full address
+                address_line = address_data.get('line', '')
+                city = address_data.get('city', 'Pittsburgh')
+                state_code = address_data.get('state_code', 'PA')
+                postal_code = address_data.get('postal_code', '')
+
+                full_address = f"{address_line}, {city}, {state_code} {postal_code}".strip(', ')
+
+                # Extract property details
+                beds = desc.get('beds', 1) or 1
+                baths_str = desc.get('baths_consolidated', '1') or '1'
+                try:
+                    baths = float(baths_str)
+                except (ValueError, TypeError):
+                    baths = 1.0
+
+                sqft = desc.get('sqft')
+                lot_sqft = desc.get('lot_sqft')
+
+                # Determine property type (default to 'apartment' for rentals)
+                # Note: This API returns sales, so we treat them as potential rentals
+                stories = desc.get('stories', 1)
+                if beds >= 4 and stories >= 2:
+                    prop_type = 'house'
+                elif beds <= 1:
+                    prop_type = 'apartment'
+                elif stories >= 2:
+                    prop_type = 'townhouse'
+                else:
+                    prop_type = 'condo'
+
+                # Get price (convert sale price to estimated monthly rent: ~0.8% of sale price)
+                list_price = prop.get('list_price', 150000)
+                # Estimate monthly rent from sale price
+                monthly_rent = int(list_price * 0.008)  # 0.8% rule of thumb
+                # Ensure reasonable rent range
+                monthly_rent = max(800, min(monthly_rent, 5000))
+
+                # Build title
+                title = f"{beds}BR/{baths}BA {prop_type.title()} in {city}"
+
+                # Extract coordinates
+                latitude = coordinate.get('lat')
+                longitude = coordinate.get('lon')
+
+                # Extract photos
+                api_images = []
+                photos = prop.get('photos', [])
+                if photos:
+                    api_images = [photo.get('href') for photo in photos if photo.get('href')]
+                primary_photo = prop.get('primary_photo', {})
+                if primary_photo:
+                    primary_photo_url = primary_photo.get('href')
+                    if primary_photo_url and primary_photo_url not in api_images:
+                        api_images.insert(0, primary_photo_url)
+
+                # Build description
+                description_parts = [
+                    f"Property in {city}, {state_code}",
+                    f"{beds} bedrooms, {baths} bathrooms"
+                ]
+                if sqft:
+                    description_parts.append(f"{sqft} sqft")
+                if lot_sqft:
+                    description_parts.append(f"Lot: {lot_sqft} sqft")
+
+                # Add flags as amenities
+                flags = prop.get('flags', {})
+                amenities = []
+                if flags.get('is_garage_present'):
+                    amenities.append('Garage')
+                if flags.get('is_new_construction'):
+                    amenities.append('New Construction')
+
+                description = ". ".join(description_parts) + "."
+                if amenities:
+                    description += f" Features: {', '.join(amenities)}."
+
+                # Extract landlord from advertisers
+                advertisers = prop.get('advertisers', [])
+                fulfillment_id = advertisers[0].get('fulfillment_id', 'unknown') if advertisers else 'unknown'
+
+                landlord_info = {
+                    'company_name': f"Realtor Listing {fulfillment_id}",
+                    'unique_key': f"realtor_search_{fulfillment_id}",
+                    'phone': None,
+                    'description': f"Real estate listing from Realtor.com",
+                    'api_source': 'realtor_search'
+                }
+
+                landlord = self._get_or_create_api_landlord(db, landlord_info)
+                if landlord and landlord_info.get('newly_created'):
+                    created_landlords += 1
+
+                if not landlord:
+                    logger.warning(f"Failed to create landlord for property {prop.get('property_id')}")
+                    continue
+
+                # Check duplicates by address
+                existing = db.query(Property).filter(
+                    Property.address == full_address
+                ).first()
+
+                if existing:
+                    logger.debug(f"Duplicate property: {full_address}")
+                    continue
+
+                # Get listing URL
+                permalink = prop.get('permalink', '')
+                href = prop.get('href', '')
+                listing_url = href if href else f"https://www.realtor.com/realestateandhomes-detail/{permalink}"
+
+                # Create extended description
+                extended_desc = f"Property ID: {prop.get('property_id')}\n"
+                extended_desc += f"Listing ID: {prop.get('listing_id')}\n"
+                extended_desc += f"Status: {prop.get('status', 'for_sale')}\n"
+                extended_desc += f"Source: Realtor Search API\n"
+                if listing_url:
+                    extended_desc += f"Original Listing: {listing_url}"
+
+                # Create Property object
+                new_property = Property(
+                    title=title,
+                    price=monthly_rent,
+                    description=description,
+                    extended_description=extended_desc,
+                    property_type=prop_type,
+                    bedrooms=beds,
+                    bathrooms=baths,
+                    area=sqft,
+                    address=full_address,
+                    city=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    landlord_id=landlord.id,
+                    is_active=True,
+                    image_url=api_images[0] if api_images else None,
+                    api_images=api_images if api_images else None,
+                    api_amenities=amenities if amenities else None,
+                    api_source='realtor_search'
+                )
+
+                db.add(new_property)
+                db.commit()
+                db.refresh(new_property)
+
+                # Try to enrich the property (respects global limits)
+                try:
+                    self._enrich_property_if_available(db, new_property)
+                except Exception as e:
+                    logger.warning(f"Enrichment failed for property {new_property.id}: {e}")
+
+                saved_count += 1
+                properties_list.append({
+                    'id': new_property.id,
+                    'title': title,
+                    'price': monthly_rent,
+                    'address': full_address,
+                    'city': city
+                })
+
+                logger.info(f"Saved property: {title} at {full_address}")
+
+            except Exception as e:
+                db.rollback()
+                logger.error(f"Error processing realtor search property: {e}")
+                logger.debug(f"Problem property data: {prop}")
+                continue
+
+        return {
+            'success': True,
+            'total_fetched': len(results),
+            'saved_count': saved_count,
+            'created_landlords': created_landlords,
+            'properties': properties_list
+        }
+
     def _process_realtor16_properties(self, db: Session, properties_data: List[Dict]) -> Dict:
         """Process Realtor16 property data"""
         saved_count = 0
