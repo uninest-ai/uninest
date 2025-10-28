@@ -83,7 +83,7 @@ class MultiSourceFetcher:
 
         return results
     
-    def _fetch_from_realtor_search(self, db: Session, limit: int) -> Dict:
+    def _fetch_from_realtor_search(self, db: Session, limit: int, fulfillment_id: str = "3155600") -> Dict: # "3155600" NYC ONLY
         """
         Fetch data from Realtor Search API (realtor-search.p.rapidapi.com)
 
