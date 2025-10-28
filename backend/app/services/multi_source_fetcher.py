@@ -83,7 +83,7 @@ class MultiSourceFetcher:
 
         return results
     
-    def _fetch_from_realtor_search(self, db: Session, limit: int, fulfillment_id: str = "3155600") -> Dict:
+    def _fetch_from_realtor_search(self, db: Session, limit: int) -> Dict:
         """
         Fetch data from Realtor Search API (realtor-search.p.rapidapi.com)
 
@@ -95,11 +95,16 @@ class MultiSourceFetcher:
             "X-RapidAPI-Host": "realtor-search.p.rapidapi.com"
         }
 
-        # Fetch properties from agent listings
-        url = f"https://realtor-search.p.rapidapi.com/agents/v2/listings"
+        # Search by location (Pittsburgh, PA) instead of agent
+        url = "https://realtor-search.p.rapidapi.com/properties/v3/list"
         params = {
-            "fulfillmentId": fulfillment_id,
-            "limit": str(limit)
+            "city": "Pittsburgh",
+            "state_code": "PA",
+            "limit": str(limit),
+            "offset": "0",
+            "postal_code": "",  # Search entire Pittsburgh area
+            "status": ["for_sale", "for_rent"],  # Include both
+            "sort": "newest"
         }
 
         try:
