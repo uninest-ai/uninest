@@ -57,13 +57,13 @@ def test_create_tenant_profile(client, test_tenant):
         headers={"Authorization": f"Bearer {token}"},
         json={
             "budget": 1200.0,
-            "preferred_location": "Pittsburgh",
+            "preferred_location": "New York",
         }
     )
     assert response.status_code == 201
     data = response.json()
     assert data["budget"] == 1200.0
-    assert data["preferred_location"] == "Pittsburgh"
+    assert data["preferred_location"] == "New York"
 
 
 def test_get_tenant_profile(client, test_tenant, test_db):

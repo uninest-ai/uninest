@@ -16,8 +16,8 @@ class RapidAPIFetcher:
         try:
             url = "https://realty-mole-property-api.p.rapidapi.com/rentalListings"
             params = {
-                "city": "Pittsburgh",
-                "state": "PA", 
+                "city": "New York",
+                "state": "NY",
                 "limit": min(limit, 50)
             }
             
@@ -64,7 +64,7 @@ class RapidAPIFetcher:
                         bedrooms=listing.get('bedrooms'),
                         bathrooms=listing.get('bathrooms'),
                         address=address,
-                        city='Pittsburgh',
+                        city='New York',
                         latitude=listing.get('latitude'),
                         longitude=listing.get('longitude'),
                         landlord_id=landlord_id,

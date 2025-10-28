@@ -27,7 +27,7 @@ def test_tenant(test_db):
     profile = TenantProfile(
         user_id=tenant.id,
         budget=1500.0,
-        preferred_location="Pittsburgh"
+        preferred_location="New York"
     )
     test_db.add(profile)
     
@@ -101,7 +101,7 @@ def test_properties(test_db, test_landlord):
             bedrooms=2,
             bathrooms=1.5,
             area=1000.0,
-            city="Pittsburgh",
+            city="New York",
             landlord_id=landlord_profile.id,
             is_active=True
         ),
@@ -113,7 +113,7 @@ def test_properties(test_db, test_landlord):
             bedrooms=2,
             bathrooms=1.0,
             area=950.0,
-            city="Pittsburgh",
+            city="New York",
             landlord_id=landlord_profile.id,
             is_active=True
         ),
@@ -137,7 +137,7 @@ def test_properties(test_db, test_landlord):
             bedrooms=2,
             bathrooms=1.5,
             area=1000.0,
-            city="Pittsburgh",
+            city="New York",
             landlord_id=landlord_profile.id,
             is_active=False
         )

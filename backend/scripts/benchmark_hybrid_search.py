@@ -33,28 +33,28 @@ from app.models import Property
 # Realistic user queries with detailed preferences and price constraints
 TEST_QUERIES = [
     {
-        "query": "Oakland apartment two-car garage well-maintained landscaping quiet, target_price: 1000.0",
-        "expected_keywords": ["Oakland", "apartment", "garage", "quiet"],
+        "query": "Brooklyn apartment two-car garage well-maintained landscaping quiet, target_price: 1000.0",
+        "expected_keywords": ["Brooklyn", "apartment", "garage", "quiet"],
         "description": "Location + amenities + atmosphere with price constraint"
     },
     {
-        "query": "Shadyside modern studio hardwood floors natural light near CMU, target_price: 1200.0",
-        "expected_keywords": ["Shadyside", "modern", "studio", "hardwood"],
+        "query": "Manhattan modern studio hardwood floors natural light near NYU, target_price: 1200.0",
+        "expected_keywords": ["Manhattan", "modern", "studio", "hardwood"],
         "description": "Location + style + features with price constraint"
     },
     {
-        "query": "Squirrel Hill 2-bedroom apartment parking laundry in-unit pet-friendly, target_price: 1500.0",
-        "expected_keywords": ["Squirrel Hill", "apartment", "parking", "laundry", "pet"],
+        "query": "Queens 2-bedroom apartment parking laundry in-unit pet-friendly, target_price: 1500.0",
+        "expected_keywords": ["Queens", "apartment", "parking", "laundry", "pet"],
         "description": "Location + size + amenities + pet-friendly with price constraint"
     },
     {
-        "query": "Pittsburgh house backyard quiet neighborhood good schools family-friendly, target_price: 2000.0",
+        "query": "Brooklyn house backyard quiet neighborhood good schools family-friendly, target_price: 2000.0",
         "expected_keywords": ["house", "backyard", "quiet", "family"],
         "description": "Property type + features + family needs with price constraint"
     },
     {
-        "query": "Oakland walking distance CMU furnished utilities included student housing, target_price: 800.0",
-        "expected_keywords": ["Oakland", "CMU", "furnished", "utilities", "student"],
+        "query": "Manhattan walking distance Columbia furnished utilities included student housing, target_price: 800.0",
+        "expected_keywords": ["Manhattan", "Columbia", "furnished", "utilities", "student"],
         "description": "Student-focused search with location and budget constraint"
     },
 ]

@@ -15,11 +15,11 @@ class Realtor16Fetcher:
     def get_real_properties_with_landlords(self, db: Session, limit: int = 20) -> Dict:
         """获取真实房源并自动创建对应的房东（包含原始链接）"""
         try:
-            # 匹兹堡的坐标
+            # 纽约的坐标
             url = "https://realtor16.p.rapidapi.com/search/forrent/coordinates"
             params = {
-                "latitude": "40.4406",    # 匹兹堡坐标
-                "longitude": "-79.9959",  # 匹兹堡坐标
+                "latitude": "40.7128",    # 纽约坐标
+                "longitude": "-74.0060",  # 纽约坐标
                 "radius": "30"            # 30英里半径
             }
             
@@ -84,7 +84,7 @@ class Realtor16Fetcher:
                         bathrooms=processed_property['bathrooms'],
                         area=processed_property['area'],
                         address=processed_property['address'],
-                        city="Pittsburgh",
+                        city="New York",
                         latitude=processed_property.get('latitude'),
                         longitude=processed_property.get('longitude'),
                         landlord_id=landlord_profile.id,

@@ -150,8 +150,8 @@ class MultiSourceFetcher:
 
         url = "https://realtor16.p.rapidapi.com/search/forrent/coordinates"
         params = {
-            "latitude": "40.4406",    # Pittsburgh coordinates
-            "longitude": "-79.9959",
+            "latitude": "40.7128",    # New York coordinates
+            "longitude": "-74.0060",
             "radius": "25",           # 25 mile radius
             "limit": str(limit)
         }
@@ -191,16 +191,16 @@ class MultiSourceFetcher:
         return self._process_realty_mole_properties(db, listings)
     
     def _fetch_custom_pittsburgh_data(self, db: Session, limit: int) -> Dict:
-        """Generate custom Pittsburgh housing data for areas near CMU"""
+        """Generate custom NYC housing data for diverse neighborhoods"""
         pittsburgh_neighborhoods = [
-            {"name": "Oakland", "lat": 40.4418, "lng": -79.9561, "avg_rent": 1400},
-            {"name": "Shadyside", "lat": 40.4520, "lng": -79.9343, "avg_rent": 1600},
-            {"name": "Squirrel Hill", "lat": 40.4384, "lng": -79.9221, "avg_rent": 1350},
-            {"name": "Greenfield", "lat": 40.4268, "lng": -79.9390, "avg_rent": 1200},
-            {"name": "Point Breeze", "lat": 40.4446, "lng": -79.9081, "avg_rent": 1300},
-            {"name": "Regent Square", "lat": 40.4290, "lng": -79.8956, "avg_rent": 1450},
-            {"name": "Bloomfield", "lat": 40.4633, "lng": -79.9496, "avg_rent": 1250},
-            {"name": "Friendship", "lat": 40.4583, "lng": -79.9398, "avg_rent": 1550}
+            {"name": "Upper West Side", "lat": 40.7870, "lng": -73.9754, "avg_rent": 3500},
+            {"name": "East Village", "lat": 40.7264, "lng": -73.9818, "avg_rent": 3200},
+            {"name": "Williamsburg", "lat": 40.7081, "lng": -73.9571, "avg_rent": 2800},
+            {"name": "Park Slope", "lat": 40.6710, "lng": -73.9778, "avg_rent": 2600},
+            {"name": "Astoria", "lat": 40.7644, "lng": -73.9235, "avg_rent": 2200},
+            {"name": "Long Island City", "lat": 40.7447, "lng": -73.9485, "avg_rent": 2500},
+            {"name": "Riverdale", "lat": 40.8989, "lng": -73.9057, "avg_rent": 2000},
+            {"name": "St. George", "lat": 40.6437, "lng": -74.0774, "avg_rent": 1800}
         ]
         
         properties_list = []
@@ -236,7 +236,7 @@ class MultiSourceFetcher:
                         bathrooms=property_data['bathrooms'],
                         area=property_data['area'],
                         address=property_data['address'],
-                        city="Pittsburgh",
+                        city="New York",
                         latitude=property_data['latitude'],
                         longitude=property_data['longitude'],
                         landlord_id=landlord.id,
@@ -292,8 +292,8 @@ class MultiSourceFetcher:
 
                 # Build full address
                 address_line = address_data.get('line', '')
-                city = address_data.get('city', 'Pittsburgh')
-                state_code = address_data.get('state_code', 'PA')
+                city = address_data.get('city', 'New York')
+                state_code = address_data.get('state_code', 'NY')
                 postal_code = address_data.get('postal_code', '')
 
                 full_address = f"{address_line}, {city}, {state_code} {postal_code}".strip(', ')

@@ -49,7 +49,7 @@ const PropertyProfile = () => {
         bedrooms: "3",
         bathrooms: "2",
         image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
-        description: "Welcome to Ruth Gardens in Pittsburgh, PA! Our apartments offer convenience and comfort with amenities such as a parking garage, gas and water included, on-site laundry facilities, and an intercom system for added security. Located close to shops, bus lines, and universities, Ruth Gardens is the perfect place for those looking for a convenient and hassle-free living experience. Don't miss out on the opportunity to call Ruth Gardens your new home!",
+        description: "Welcome to Ruth Gardens in New York, NY! Our apartments offer convenience and comfort with amenities such as a parking garage, gas and water included, on-site laundry facilities, and an intercom system for added security. Located close to shops, bus lines, and universities, Ruth Gardens is the perfect place for those looking for a convenient and hassle-free living experience. Don't miss out on the opportunity to call Ruth Gardens your new home!",
         reviews: [
             {
                 id: 1,

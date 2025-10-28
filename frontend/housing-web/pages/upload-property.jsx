@@ -18,7 +18,7 @@ const UploadProperty = () => {
     bathrooms: "1",
     area: "",
     address: "",
-    city: "Pittsburgh", // 固定值
+    city: "New York", // 固定值
   });
 
   const [loading, setLoading] = useState(false);
