@@ -420,7 +420,7 @@ async def admin_fetch_multi_source_properties(
     - Custom Pittsburgh neighborhood data (tertiary source)
     
     Usage:
-    curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-multi-source-properties?property_count=50" \
+    curl -X POST "http://3.145.189.113:8000/api/v1/admin/fetch-multi-source-properties?property_count=10" \
       -H "X-Admin-Key: Admin123456"
     """
     

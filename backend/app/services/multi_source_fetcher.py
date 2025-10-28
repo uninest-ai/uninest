@@ -56,7 +56,7 @@ class MultiSourceFetcher:
             'errors': []
         }
         
-        # Fetch from primary source (Realtor Search API - NEW)
+        # Fetch from primary source (Realtor Search API - agent listings)
         try:
             realtor_result = self._fetch_from_realtor_search(db, limit=limit)
             if realtor_result['success']:
@@ -96,16 +96,22 @@ class MultiSourceFetcher:
         }
 
         # Search by location (New York City) instead of agent
-        url = "https://realtor-search.p.rapidapi.com/properties/v3/list"
+        # url = "https://realtor-search.p.rapidapi.com/properties/v3/list"
+        # params = {
+        #     "city": "New York",
+        #     "state_code": "NY",
+        #     "limit": str(limit),
+        #     "offset": "0",
+        #     "postal_code": "",  # Search entire NYC area
+        #     "status": ["for_sale", "for_rent"],  # Include both
+        #     "sort": "newest"
+        # }
+        url = f"https://realtor-search.p.rapidapi.com/agents/v2/listings"
         params = {
-            "city": "New York",
-            "state_code": "NY",
-            "limit": str(limit),
-            "offset": "0",
-            "postal_code": "",  # Search entire NYC area
-            "status": ["for_sale", "for_rent"],  # Include both
-            "sort": "newest"
+            "fulfillmentId": fulfillment_id,
+            "limit": str(limit)
         }
+
 
         try:
             response = requests.get(url, headers=headers, params=params, timeout=10)
