@@ -22,6 +22,7 @@ import statistics
 from typing import List, Dict, Set
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.database import SessionLocal
 from app.services.hybrid_search import hybrid_search_simple, bm25_search_properties_ids_only
@@ -355,7 +356,12 @@ def run_recall_benchmark(db: Session, test_queries: List[Dict], method: str = "h
                     print(f"             🔖 Image Labels: {', '.join(str(l) for l in labels[:5])}")
 
                 # Show embedding status (for vector search)
-                has_embedding = hasattr(prop, 'embedding') and prop.embedding is not None
+                # Check property_embeddings table directly
+                embedding_result = db.execute(
+                    text("SELECT id FROM property_embeddings WHERE id = :prop_id"),
+                    {"prop_id": prop.id}
+                ).fetchone()
+                has_embedding = embedding_result is not None
                 print(f"             🔢 Vector Embedding: {'✅ Present' if has_embedding else '❌ Missing'}")
 
     avg_recall = statistics.mean(recall_scores) if recall_scores else 0.0
