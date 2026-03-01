@@ -6,7 +6,7 @@ UniNest pairs a traditional BM25 keyword engine with semantic vector search, pru
 - Yiqi Cheng: Backend Developer
 - Mathilda Chen: Frontend Deverloper
 
-- Demo link: http://3.145.189.113/
+- Demo link: http://3.145.189.113/ (stopped using)
 
 ## Intention
 UniNest is a full-stack web application designed to help students find housing recommendations near CMU. The platform features AI-powered chat assistance, intelligent image analysis for housing preferences, and roommate matching functionality.
