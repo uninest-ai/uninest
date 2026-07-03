@@ -30,3 +30,6 @@ CLAUDE.md
 archive/
 backend/COMMAND_NOTES.md
 reviews/
+
+# 本地私人笔记,不提交(任何 *.local.md)
+*.local.md
