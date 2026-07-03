@@ -53,6 +53,31 @@ services:
       - "5433:5432"
     restart: unless-stopped
 
+  # --- Demo: AI Gateway + embedding microservice on one network ---
+  # compose's default network lets services reach each other by name
+  # (e.g. the gateway calls http://embedding-service:8001).
+  embedding-service:
+    build:
+      context: .
+      dockerfile: backend/ai_gateway_demo/Dockerfile
+    command: uv run uvicorn ai_gateway_demo.embedding_service:app --host 0.0.0.0 --port 8001
+    volumes:
+      - sentence_transformers_cache:/root/.cache/torch/sentence_transformers
+    restart: unless-stopped
+
+  ai-gateway:
+    build:
+      context: .
+      dockerfile: backend/ai_gateway_demo/Dockerfile
+    command: uv run uvicorn ai_gateway_demo.gateway:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8010:8000"   # gateway on host :8010 (the monolith backend already uses :8000)
+    environment:
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8001   # reach the service by its compose name
+    depends_on:
+      - embedding-service
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   sentence_transformers_cache:

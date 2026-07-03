@@ -1,63 +1,56 @@
-# ai_gateway_demo — Higharc-pattern AI Gateway (extracted from UniNest's embedding service)
+# ai_gateway_demo — a production-style AI Gateway
 
-A minimal, self-contained demo of the pattern Higharc uses: **a lightweight FastAPI
-gateway that routes requests to standalone FastAPI microservices.** Extracted from
-UniNest's `app/services/embedding_service.py`.
+A minimal, self-contained demo of a common production pattern: **a lightweight FastAPI
+gateway that routes requests to standalone FastAPI microservices**, and hosts the
+cross-cutting AI concerns (rate limiting, PII masking, observability, caching,
+routing/fallback) in one place. Built on top of UniNest's embedding capability.
 
 ## The pattern
 ```
-client ──POST /embed──►  gateway (:8000)  ──async httpx──►  embedding-service (:8001)
-                         holds NO model                     OWNS the model (loaded once)
+client ─POST /embed─►  gateway (:8000)  ─async httpx─►  embedding-service (:8001)
+                       holds NO model                   OWNS the model (loaded once)
 ```
-- **gateway.py** — lightweight, no model, no heavy compute. Validates, routes over the
-  network (async), degrades gracefully if the downstream is down. This is where
-  logging / rate-limit / auth middleware would live.
-- **embedding_service.py** — a standalone service that owns the `SentenceTransformer`
-  model. Loaded once per process, reused across requests.
-- **schemas.py** — Pydantic contracts shared by both sides (the type contract).
-- **test_gateway.py** — tests the gateway in isolation by mocking the downstream.
 
-## Why it is built this way (the 3 lessons)
-1. **Model lives in the service, not the gateway.** If you loaded the model in the
-   gateway and ran N workers, each worker copies the model into memory → OOM. One
-   shared service = one copy. The gateway stays cheap to scale.
-2. **Gateway handler is `async def`, embed handler is `def`.** Gateway work is
-   I/O-bound (network), so async on the event loop = high concurrency. Model inference
-   is compute-bound, so a sync `def` handler is handed to the thread pool and does not
-   block the event loop. The #1 mistake is putting a blocking call inside `async def`.
-3. **The two services are independently deployable + testable.** The gateway's routing
-   and error handling are tested without the model even running (see the mocked tests).
+## Files
+- `gateway.py` — lightweight gateway: validates, routes async, degrades gracefully. Hosts the cross-cutting middleware.
+- `embedding_service.py` — standalone service that owns the SentenceTransformer model; `/embed`, `/index`, `/search`.
+- `repository.py` — the data layer (a `VectorRepository` interface + in-memory impl + cosine/rank). Swap for Postgres/Qdrant without touching the service.
+- `middleware.py` — rate limiting + PII masking.
+- `cache.py` — a semantic cache (cosine-based).
+- `schemas.py` — shared Pydantic contracts.
+- `tools.py` + `agent.py` — a tool-using "Housing Concierge" agent: orchestration loop + a swappable LLM planner (`Planner` interface, `LLMPlanner` default) + a tool-allowlist guardrail.
+- `test_*.py` — pytest; the downstream service and the LLM are mocked, so no model or API key is needed.
 
-## Maps to Higharc
-| here | Higharc |
-|---|---|
-| gateway.py | their AI Gateway (lightweight FastAPI router) |
-| embedding-service | their `Embeddings` microservice (SBM encoder-only pathway) |
-| async httpx routing | web clients → AI Gateway → microservices over `higharc-network` |
-| schemas.py | their `schemas/` Pydantic contract layer |
+## Why it is built this way (the lessons)
+1. **Model lives in the service, not the gateway.** N gateway workers would each copy the model into memory → OOM. One shared service = one copy; the gateway stays cheap to scale.
+2. **Gateway handler is `async def`, the embed handler is `def`.** Gateway work is I/O-bound (network) → event loop → high concurrency. Model inference is compute-bound → sync `def` → thread pool. The #1 mistake is a blocking call inside `async def`.
+3. **Services are independently deployable + testable.** The gateway's routing/error handling is tested without the model even running (mocked downstream).
+4. **Cross-cutting concerns live in the gateway,** not duplicated per service: rate limiting, PII masking, observability, routing/fallback, caching.
+5. **Data access is behind a repository,** so the storage backend is swappable.
+6. **The agent's orchestration loop is plain code; the LLM is swappable** behind the `Planner` interface; guardrails (the tool allowlist) are enforced in code, not the prompt.
 
 ## Run it
 ```bash
-# extra deps this demo needs (httpx for the gateway):
-uv add httpx
-# (fastapi, uvicorn, sentence-transformers, numpy, pytest are already in the project)
+uv add fastapi uvicorn httpx pytest
+# the embedding-service live run also needs: uv add sentence-transformers
 
-# terminal 1 — the microservice (first run downloads the ~90MB model):
+# microservice (first run downloads the ~90MB model):
 uv run uvicorn ai_gateway_demo.embedding_service:app --port 8001
-
-# terminal 2 — the gateway:
+# gateway:
 uv run uvicorn ai_gateway_demo.gateway:app --port 8000
 
 # try it:
-curl -X POST localhost:8000/embed -H "content-type: application/json" -d '{"text":"cozy 2-bed near CMU"}'
+curl -X POST localhost:8000/embed -H "content-type: application/json" -d '{"text":"cozy 2-bed near campus"}'
 
-# tests (no model / no running service needed):
-uv run pytest ai_gateway_demo/test_gateway.py -v
+# checks (no model / API key needed):
+uv run pytest ai_gateway_demo -v
+uv run ruff check ai_gateway_demo
+uv run mypy ai_gateway_demo
 ```
 
-## Next steps (the rest of the upgrade)
-- Add a `/search` endpoint that adds a **repository/data layer** for the DB embeddings
-  (the `save_embedding` / `get_all_embeddings` SQL currently sits inside the service).
-- Add a **GitHub Actions** workflow running `uv run pytest` + lint + type-check on PR.
-- Update `docker-compose.yml` to run gateway + service as two containers on one network
-  (mirrors `higharc-network`).
+## What's included
+- Gateway → microservice split, with a repository data layer and `/search`.
+- AI-gateway middleware: routing + fallback, rate limiting, PII masking, observability, semantic cache.
+- A tool-using, location-first Concierge agent.
+- CI (`.github/workflows/ci.yml`): ruff + mypy + pytest on PR.
+- `docker-compose.yml`: gateway + embedding-service on one network.

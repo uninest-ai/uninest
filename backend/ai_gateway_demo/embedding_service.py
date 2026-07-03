@@ -1,7 +1,7 @@
 """
 Embedding microservice: a STANDALONE FastAPI app that OWNS the model + a repository.
 
-Mirrors Higharc's `Embeddings` microservice (the SBM encoder-only pathway).
+A standalone embedding / retrieval microservice.
 - the heavy SentenceTransformer model lives HERE, loaded once per process;
 - DB access is behind a `VectorRepository` (data layer), so the service logic
   (encode + rank) does not know or care where vectors are stored.

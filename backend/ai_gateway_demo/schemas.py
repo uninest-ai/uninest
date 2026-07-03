@@ -1,7 +1,7 @@
 """
 Pydantic contracts shared between the gateway and the microservice.
 
-These schemas ARE the type contract (like Higharc's `schemas/` layer):
+These schemas ARE the type contract (a shared `schemas/` layer):
 both sides validate/serialize with them, so neither can drift from the other.
 """
 from pydantic import BaseModel, Field
