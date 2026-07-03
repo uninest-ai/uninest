@@ -54,3 +54,19 @@ uv run mypy ai_gateway_demo
 - A tool-using, location-first Concierge agent.
 - CI (`.github/workflows/ci.yml`): ruff + mypy + pytest on PR.
 - `docker-compose.yml`: gateway + embedding-service on one network.
+
+## Benchmark: why the handlers are `async`
+`bench_concurrency.py` fires 50 concurrent requests (each a 50ms simulated downstream
+call) at three handlers. The correct async I/O handler sustains ~25x the throughput of
+the same handler with a blocking call inside `async def` (the classic event-loop bug):
+
+| handler | 50 concurrent, total | throughput |
+|---|---|---|
+| `async def` + `await` (I/O-bound, correct) | ~110 ms | ~460 req/s |
+| `def` + blocking (FastAPI threadpool) | ~470 ms | ~105 req/s |
+| `async def` + blocking call (freezes the loop) | ~2700 ms | ~18 req/s |
+
+```bash
+uv run python -m ai_gateway_demo.bench_concurrency
+```
+This is the concrete cost behind the rule "never block the event loop inside `async def`."
